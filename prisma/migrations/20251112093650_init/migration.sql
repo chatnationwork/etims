@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "SavedItem" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "category" TEXT,
     "item" TEXT,
     "quantity" TEXT,
@@ -12,5 +12,7 @@ CREATE TABLE "SavedItem" (
     "cert" TEXT,
     "hsCode" TEXT,
     "phone" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SavedItem_pkey" PRIMARY KEY ("id")
 );
