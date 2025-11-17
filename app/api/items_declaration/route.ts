@@ -107,8 +107,6 @@ export async function POST(req: NextRequest) {
       compute_assessments: boolean;
     } = await req.json();
 
-    console.log("Received data:", body);
-
     // conver the quantity and value to numbers
     const items = body.items.map((item) => ({
       ...item,
@@ -117,6 +115,8 @@ export async function POST(req: NextRequest) {
     }));
 
     body.items = items;
+
+    console.log("Transformed data:", body);
 
     const results = await fetch(
       "https://kratest.pesaflow.com/api/customs/passenger-declaration",
@@ -139,10 +139,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log("Total Tax Calculated:", totalTax);
+    console.log("Total Tax Calculated:", totalTax, data);
+
+    //format the data into a readable string format
+    const formattedData = data.assesments
+      .map((assessment) => {
+        return `Item ID: ${assessment.metadata.f88ItemId}, Tax Type: ${assessment.tax_type}, Tax Rate: ${assessment.tax_rate}%, Tax Base: ${assessment.tax_base}, Tax Amount: ${assessment.tax_amount}`;
+      })
+      .join("\n");
+
+    console.log("Formatted Assessment Data:\n", formattedData);
 
     return NextResponse.json(
-      { message: "Success", data, totalTax },
+      { message: "Success", data, totalTax, formattedData },
       { status: 200 }
     );
   } catch (error) {
