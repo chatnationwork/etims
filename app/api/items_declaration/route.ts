@@ -129,6 +129,16 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    if (!results.ok) {
+      const errorText = await results.text();
+      console.error(
+        "Error response from external API:",
+        results.status,
+        errorText
+      );
+      throw new Error(`External API error: ${results.status} - ${errorText}`);
+    }
+
     const data: Declaration = await results.json();
 
     // --- 1. CALCULATE TOTAL TAX ---
