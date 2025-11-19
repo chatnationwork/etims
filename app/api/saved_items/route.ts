@@ -20,12 +20,12 @@ export async function POST(req: NextRequest) {
       let value = item.amount;
 
       // Special cases
-      if (item.item === "Currency over $10,000") {
+      if (item.category === "Currency over $10,000") {
         description = "Currency over $10,000";
-        value = item.valueOfFund ?? item.amount; // fallback if null
+        value = item.valueOfFund ?? item.amount;
       }
 
-      if (item.item === "Good for Re-importation") {
+      if (item.category === "Good for Re-importation") {
         description = "Good for Re-importation";
         // value stays item.amount
       }

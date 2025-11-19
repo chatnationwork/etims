@@ -7,12 +7,17 @@ export async function POST(req: NextRequest) {
 
     console.log("Received data:", body);
 
+    let valueToUse = body.amount;
+    if (body.category === "Currency over $10,000" && body.valueOfFund) {
+      valueToUse = body.valueOfFund;
+    }
+
     await prisma.savedItem.create({
       data: {
         category: body.category,
         item: body.item,
         quantity: body.quantity,
-        amount: body.amount,
+        amount: valueToUse,
         currency: body.currency,
         valueOfFund: body.valueOfFund,
         sourceOfFund: body.sourceOfFund,
