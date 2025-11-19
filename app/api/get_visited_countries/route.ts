@@ -35,11 +35,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "phone is required" }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { message: "Success", validCountries: ["KE", "UG", "TZ"] },
-      { status: 200 }
-    );
-
     // 1. Fetch + delete inside a transaction to avoid races
     const [records] = await prisma.$transaction([
       prisma.visitedCountires.findMany({ where: { phone } }),
