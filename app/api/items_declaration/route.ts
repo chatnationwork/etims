@@ -92,6 +92,94 @@ export interface Declaration {
   updated_at: string;
 }
 
+const TAX_MAP: Record<string, string> = {
+  "1206": "VAT Oils 8%",
+  "2302": "Anti-Adulteration Levy (AAL)",
+  "1001": "Import Duty - Oil",
+  "1002": "Import Duty",
+  "1003": "Import Duty - Ppo (Post Parcels)",
+  "2801": "Export Duty",
+  "1101": "Excise Duty - Oils",
+  "1102": "Excise Duty",
+  "1103": "Excise Duty - Ppo",
+  "1201": "Vat Oils",
+  "1202": "Vat Imports",
+  "1203": "Vat Ppo (Post Parcels)",
+  "1205": "Vat Treo",
+  "1301": "Apsc-International",
+  "1302": "Apsc-Local",
+  "6101": "Sale of Number Plates- C&BC",
+  "6102": "Sale of Number Plates pair -C&BC",
+  "1501": "Alteration Fee",
+  "1502": "Certificate Fee for Customs Documents",
+  "1503": "Overtime Fee",
+  "1504": "Manifest Amendment",
+  "1505": "Cancellation Fee",
+  "1506": "Licence Application Fee",
+  "1507": "Licence Renewal Fee",
+  "1508": "Customs Agent Licence Fee",
+  "1510": "Transit Shed Licence Fee",
+  "1511": "Bonded Warehouse Licence Fee",
+  "1513": "Manufacture Under Bond Licence Fee",
+  "1514": "Transit Goods Licence Fee",
+  "1515": "Transit Godown Licence",
+  "1522": "Licence (Certificate) Amendment Fee",
+  "1523": "Licence (Certificate) Duplicate fee",
+  "1907": "Rent-In-Situ",
+  "1908": "Customs Warehouse Rent",
+  "1909": "Sundry Revenue",
+  "1999": "Forfeited Refunds",
+  "6501": "Road Safety fund",
+  "1601": "Fines Under East Africa Community Customs Management Act",
+  "1602": "Penalty Section 135 of East Africa Community Customs Management Act",
+  "1604": "Interest for late payment (Section 249)",
+  "1605": "Interest for late payment (Section 135)",
+  "1603": "Penalty To Bond",
+  "1901": "Proceeds From Auctions",
+  "1701": "Duty Deposits",
+  "1702": "Duty Deposit - Transits",
+  "1703": "Cash Deposits - Security Bonds",
+  "1902": "Sale Of Tamperproof Seals",
+  "1905": "Excess Cash",
+  "1906": "Bank Interest",
+  "1521": "Transit Vehicle Licence Fee",
+  "1006": "Transfer of Ownership - C&BC",
+  "1801": "IDF Fees",
+  "1802": "IDF Fee Oils",
+  "2101": "Road Maintenance Levy (RML)",
+  "2301": "Petroleum Regulatory Levy(PRL)",
+  "6601": "SHMV purchase tax - C&BC",
+  "2401": "Directorate of Civil Aviation(DCA)Revenue",
+  "2501": "Gross Payment-Petroleum Development Fund(PDF)",
+  "1517": "Transit Toll Fees",
+  "2601": "Sugar Development Levy",
+  "1518": "Concession Fees",
+  "1519": "Registration fees",
+  "6301": "Transfer Fees for Motor Vehicle Registration",
+  "6001": "Kenya Railway Development Levy(RDL)",
+  "6201": "Foreign Motor Vehicle Fees - C&BC",
+  "2701": "COMESA Certificate of origin Fee",
+  "2702": "EAC Certificate of origin fee",
+  "2703": "AGOA (African Growth and Opportunity Act) Certificate of Origin fee",
+  "2704": "EUR1 Certificate of origin fee",
+  "2705": "GSP Certificate of origin fee",
+  "6401": "Merchant Shipping Superitendent (MSS) Levy",
+  "1705": "Bank guarantee",
+  "1516": "TGV License Modification Fee",
+  "1525": "Re-importation certificate fee",
+  "1910": "Surcharge fee EX-EPZ-2.5%",
+  "6002": "Kenya Railway Development Levy(RDL)- Oil",
+  "1520": "Calibration chart certification Fee",
+  "1704": "Duty Deposits- Kenya Film Commission",
+  "6402": "Merchant Shipping Superitendent (MSS) Levy-Oil",
+  "1528": "Processing fee- Duty Free Motor vehicles",
+  "2802": "EIP Levy",
+  "1531": "Re-importation Certificate Fee",
+  "1104": "Solatium contribution",
+  "1527": "Transhipment Fees",
+  "1524": "Manifest transhipment td fee",
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body: {
@@ -165,9 +253,11 @@ export async function POST(req: NextRequest) {
           groupedByItem[itemId] = [];
         }
         // Format: "TaxType: Amount" (Compact)
-        groupedByItem[itemId].push(
-          `${assessment.tax_type}: ${assessment.tax_amount}`
-        );
+        // Replace tax code with tax name if available
+        const code = assessment.tax_type;
+        const taxName = TAX_MAP[code] ?? code; // fallback to code if missing
+
+        groupedByItem[itemId].push(`${taxName}: ${assessment.tax_amount}`);
       });
 
       // B. Convert dictionary to a clean string
