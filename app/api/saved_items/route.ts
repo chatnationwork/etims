@@ -92,11 +92,15 @@ export async function POST(req: NextRequest) {
 function toSnakeCase(obj: any) {
   const result: any = {};
 
-  for (const [key, value] of Object.entries(obj)) {
+  for (let [key, value] of Object.entries(obj)) {
+    // Lowercase first letter ALWAYS
+    key = key.charAt(0).toLowerCase() + key.slice(1);
+
     let snakeKey;
 
-    if (key === "hsCode") {
-      snakeKey = "hscode";     
+    if (key === "hsCode" || key === "hscode") {
+      // Special case
+      snakeKey = "hscode";
     } else {
       snakeKey = key
         .replace(/([A-Z])/g, "_$1")
