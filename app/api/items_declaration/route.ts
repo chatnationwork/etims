@@ -204,6 +204,8 @@ export async function POST(req: NextRequest) {
 
     body.items = items;
 
+    console.log("Items:", body.items);
+
 
     const results = await fetch(
       "https://kratest.pesaflow.com/api/customs/passenger-declaration",
