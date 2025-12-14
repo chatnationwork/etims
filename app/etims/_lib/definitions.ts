@@ -129,3 +129,24 @@ export interface SubmitCreditNoteResult {
   message?: string;
   error?: string;
 }
+
+// Submit Buyer Initiated Invoice Request
+export interface SubmitBuyerInitiatedInvoiceRequest {
+  msisdn: string; // Seller's phone
+  buyer_pin: string;
+  total_amount: number;
+  items: {
+    item_name: string;
+    taxable_amount: number;
+    quantity: number;
+  }[];
+}
+
+// Submit Buyer Initiated Invoice Response
+export interface SubmitBuyerInitiatedInvoiceResult {
+  success: boolean;
+  invoice_id?: string;
+  reference?: string;
+  message?: string;
+  error?: string;
+}

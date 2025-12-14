@@ -10,7 +10,10 @@ import {
   CreditNoteInvoice,
   SubmitCreditNoteRequest,
   SubmitCreditNoteResult,
-  CREDIT_NOTE_REASONS
+  CREDIT_NOTE_REASONS,
+  FetchedInvoice,
+  SubmitBuyerInitiatedInvoiceRequest,
+  SubmitBuyerInitiatedInvoiceResult
 } from '../etims/_lib/definitions';
 
 // Export types so they can be imported from here if needed (re-exporting types is fine in use server? No, re-exporting types is fine, but re-exporting VALUES is not)
@@ -179,28 +182,57 @@ export async function fetchInvoices(phoneNumber: string): Promise<FetchInvoicesR
     console.log('Fetch invoices response:', JSON.stringify(response.data, null, 2));
 
     // Handle different response formats
+    let invoices: any[] = [];
     if (Array.isArray(response.data)) {
-      return {
-        success: true,
-        invoices: response.data
-      };
+      invoices = response.data;
     } else if (response.data.invoices) {
-      return {
-        success: true,
-        invoices: response.data.invoices
-      };
+      invoices = response.data.invoices;
     } else if (response.data.data) {
-      return {
-        success: true,
-        invoices: response.data.data
-      };
+      invoices = response.data.data;
+    } else if (response.data.success !== false) {
+      return { success: true, invoices: [] };
     } else {
-      return {
-        success: true,
-        invoices: response.data.success !== false ? [] : undefined,
-        error: response.data.message
-      };
+      return { success: false, error: response.data.message };
     }
+
+    // Parse invoices if they are strings
+    const parsedInvoices: FetchedInvoice[] = invoices.map((inv: any) => {
+      if (typeof inv === 'string') {
+        // Format: "BI-KWFQOH; KES 3000; KRA TEST USER ITAX"
+        // Split by semicolon
+        const parts = inv.split(';').map((p: string) => p.trim());
+        const reference = parts[0] || 'Unknown';
+        
+        // Parse amount (remove KES, commas, etc)
+        const amountStr = parts[1] || '0';
+        const amount = parseFloat(amountStr.replace(/[^0-9.]/g, '')) || 0;
+        
+        const sellerName = parts[2] || 'Unknown Seller';
+
+        return {
+          invoice_id: reference,
+          reference: reference,
+          total_amount: amount,
+          status: 'pending', // Default to pending for fetched lists usually
+          buyer_name: 'You', // Buyer is the current user
+          seller_name: sellerName,
+          created_at: new Date().toISOString(), // Mock date as it's not in the string
+          items: [
+            {
+              item_name: 'Invoice Item(s)',
+              quantity: 1,
+              unit_price: amount
+            }
+          ]
+        };
+      }
+      return inv; // Return as is if already object
+    });
+
+    return {
+      success: true,
+      invoices: parsedInvoices
+    };
   } catch (error: any) {
     console.error('Fetch invoices error:', error.response?.data || error.message);
     if (error.response?.status === 404) {
@@ -431,6 +463,59 @@ export async function processBuyerInvoice(
       error.response?.data?.message || 
       error.response?.data?.error || 
       'Failed to process invoice'
+    );
+  }
+}
+
+/**
+ * Submit buyer initiated invoice (Seller creates, Buyer approves)
+ */
+export async function submitBuyerInitiatedInvoice(
+  request: SubmitBuyerInitiatedInvoiceRequest
+): Promise<SubmitBuyerInitiatedInvoiceResult> {
+  // Validate request
+  if (!request.msisdn) throw new Error('Seller phone number is required');
+  if (!request.buyer_pin) throw new Error('Buyer PIN is required');
+  if (!request.items || request.items.length === 0) throw new Error('At least one item is required');
+
+  let cleanNumber = request.msisdn.trim().replace(/[^\d]/g, '');
+  if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
+  else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
+
+  console.log('Submitting buyer initiated invoice:', JSON.stringify({ ...request, msisdn: cleanNumber }, null, 2));
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/buyer-initiated/submit/invoice`,
+      {
+        msisdn: cleanNumber,
+        buyer_pin: request.buyer_pin,
+        total_amount: request.total_amount,
+        items: request.items
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': 'triple_2_ussd'
+        },
+        timeout: 30000
+      }
+    );
+
+    console.log('Submit buyer initiated invoice response:', JSON.stringify(response.data, null, 2));
+
+    return {
+      success: response.data.success !== false, // Some APIs return success: true/false, others implict success
+      invoice_id: response.data.invoice_id || response.data.reference,
+      reference: response.data.reference,
+      message: response.data.message || 'Invoice submitted to buyer successfully'
+    };
+  } catch (error: any) {
+    console.error('Submit buyer initiated invoice error:', error.response?.data || error.message);
+    throw new Error(
+      error.response?.data?.message || 
+      error.response?.data?.error || 
+      'Failed to submit invoice to buyer'
     );
   }
 }

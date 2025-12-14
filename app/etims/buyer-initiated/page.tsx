@@ -18,20 +18,19 @@ export default function BuyerInitiatedHome() {
       title: 'Pending Invoices',
       icon: Clock,
       color: 'yellow' as const,
-      badge: '2',
-      onClick: () => alert('Feature coming soon'),
+      onClick: () => router.push('/etims/buyer-initiated/seller/invoices?status=pending'),
     },
     {
       title: 'Completed Invoices',
       icon: CheckCircle,
       color: 'green' as const,
-      onClick: () => alert('Feature coming soon'),
+      onClick: () => router.push('/etims/buyer-initiated/seller/invoices?status=completed'),
     },
     {
       title: 'Rejected Invoices',
       icon: XCircle,
       color: 'red' as const,
-      onClick: () => alert('Feature coming soon'),
+      onClick: () => router.push('/etims/buyer-initiated/seller/invoices?status=rejected'),
     },
   ];
 
@@ -40,20 +39,19 @@ export default function BuyerInitiatedHome() {
       title: 'Invoices Awaiting Action',
       icon: Clock,
       color: 'orange' as const,
-      badge: '2',
       onClick: () => router.push('/etims/buyer-initiated/buyer/pending'),
     },
     {
       title: 'Accepted Invoices',
       icon: CheckCircle,
       color: 'green' as const,
-      onClick: () => alert('Feature coming soon'),
+      onClick: () => router.push('/etims/buyer-initiated/buyer/pending?status=accepted'),
     },
     {
       title: 'Rejected Invoices',
       icon: XCircle,
       color: 'red' as const,
-      onClick: () => alert('Feature coming soon'),
+      onClick: () => router.push('/etims/buyer-initiated/buyer/pending?status=rejected'),
     },
   ];
 

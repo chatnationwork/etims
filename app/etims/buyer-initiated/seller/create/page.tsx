@@ -34,7 +34,7 @@ export default function BuyerInitiatedSellerCreate() {
 
   const handleConfirmAndContinue = () => {
     if (buyerInfo) {
-      saveBuyerInitiated({ buyerName: buyerInfo.name });
+      saveBuyerInitiated({ buyerName: buyerInfo.name, buyerPin: buyerInfo.pin });
       router.push('/etims/buyer-initiated/seller/details');
     }
   };

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout, Card, Button, TotalsCard, IdentityStrip } from '../../_components/Layout';
-import { getSalesInvoice, Invoice } from '../../_lib/store';
+import { getSalesInvoice, Invoice, getUserSession } from '../../_lib/store';
+import { submitInvoice } from '../../../actions/etims';
 import { Loader2 } from 'lucide-react';
 
 export default function SalesInvoiceReview() {
@@ -25,10 +26,41 @@ export default function SalesInvoiceReview() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     
-    // Simulate invoice generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    router.push('/etims/sales-invoice/success');
+    try {
+      const session = getUserSession();
+      if (!session?.msisdn) {
+        alert('User session not found. Please go back to home page.');
+        return;
+      }
+  
+      if (!invoice || !invoice.items) {
+         alert('Invalid invoice data');
+         return;
+      }
+
+      // Calculate total if not present
+      const calculatedTotal = invoice.total || invoice.items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+  
+      const result = await submitInvoice({
+        msisdn: session.msisdn,
+        total_amount: calculatedTotal,
+        items: invoice.items.map(item => ({
+          item_name: item.name,
+          taxable_amount: item.unitPrice,
+          quantity: item.quantity
+        }))
+      });
+  
+      if (result.success) {
+        router.push('/etims/sales-invoice/success');
+      } else {
+        alert(result.error || 'Failed to submit invoice');
+      }
+    } catch (error: any) {
+      alert(error.message || 'An error occurred while submitting the invoice');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (!mounted || !invoice) {

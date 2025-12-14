@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Input, Button } from '../../../_components/Layout';
 import { fetchInvoices } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
 import { ChevronRight, Loader2, Phone, User } from 'lucide-react';
 import { getUserSession } from '../../../_lib/store';
 
-export default function BuyerInitiatedBuyerPending() {
+function SellerInvoicesContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status') || 'pending';
+  
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isPhoneSet, setIsPhoneSet] = useState(false);
   const [invoices, setInvoices] = useState<FetchedInvoice[]>([]);
@@ -17,12 +20,19 @@ export default function BuyerInitiatedBuyerPending() {
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState('');
 
+  const getTitle = () => {
+    switch(statusFilter) {
+      case 'completed': return 'Completed Invoices';
+      case 'rejected': return 'Rejected Invoices';
+      default: return 'Pending Invoices';
+    }
+  };
+
   useEffect(() => {
     const session = getUserSession();
     if (session?.msisdn) {
       setPhoneNumber(session.msisdn);
       setIsPhoneSet(true);
-      // Auto fetch if number exists
       fetchInvoicesData(session.msisdn);
     }
     setInitializing(false);
@@ -37,7 +47,6 @@ export default function BuyerInitiatedBuyerPending() {
       const result = await fetchInvoices(phone);
       if (result.success && result.invoices) {
         setInvoices(result.invoices);
-        // setIsPhoneSet(true); // Already set if auto-fetching, but ensures manual fetch works too
       } else {
         setError(result.error || 'No invoices found');
         if (result.success && !result.invoices) {
@@ -59,14 +68,13 @@ export default function BuyerInitiatedBuyerPending() {
   };
 
   const handleInvoiceClick = (invoice: FetchedInvoice) => {
-    // Pass phone number to view page to allow re-fetching or actions context
-    const invoiceId = invoice.invoice_id || invoice.reference; // Use available ID
-    router.push(`/etims/buyer-initiated/buyer/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}`);
+    const invoiceId = invoice.invoice_id || invoice.reference;
+    router.push(`/etims/buyer-initiated/seller/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}`);
   };
 
   if (initializing) {
     return (
-        <Layout title="Invoices Awaiting Action" onBack={() => router.push('/etims/buyer-initiated')}>
+        <Layout title={getTitle()} onBack={() => router.push('/etims/buyer-initiated')}>
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
                 <p className="text-gray-500">Loading...</p>
@@ -77,10 +85,9 @@ export default function BuyerInitiatedBuyerPending() {
 
   return (
     <Layout 
-      title="Invoices Awaiting Action" 
+      title={getTitle()}
       onBack={() => {
         if (isPhoneSet && !getUserSession()?.msisdn) {
-          // Only go back to input if manually entered, otherwise go back to menu
           setIsPhoneSet(false);
           setInvoices([]);
         } else {
@@ -97,7 +104,7 @@ export default function BuyerInitiatedBuyerPending() {
                 <h3>Enter Your Phone Number</h3>
               </div>
               <p className="text-sm text-gray-600">
-                Please enter your phone number to view pending invoices sent to you.
+                Enter your phone number to check invoices you have sent.
               </p>
               <Input
                 label="Phone Number"
@@ -131,7 +138,7 @@ export default function BuyerInitiatedBuyerPending() {
                 </div>
             ) : invoices.length === 0 ? (
               <Card className="text-center py-8">
-                <p className="text-gray-600">No pending invoices found for {phoneNumber}</p>
+                <p className="text-gray-600">No sent invoices found for {phoneNumber}</p>
                 {!getUserSession()?.msisdn && (
                     <div className="mt-4">
                         <Button variant="secondary" onClick={() => setIsPhoneSet(false)}>Check Another Number</Button>
@@ -167,8 +174,9 @@ export default function BuyerInitiatedBuyerPending() {
 
                       <div className="flex items-end justify-between">
                         <div className="text-sm text-gray-600 space-y-1">
-                            <p><span className="font-medium text-gray-500">Buyer:</span> {invoice.buyer_name || 'Me'}</p>
-                            <p><span className="font-medium text-gray-500">Seller:</span> {invoice.seller_name || 'Unknown'}</p>
+                            {/* In Seller View: 'Buyer' is the other party (name in list), 'Seller' is Me */}
+                            <p><span className="font-medium text-gray-500">Buyer:</span> {invoice.seller_name}</p> 
+                            <p><span className="font-medium text-gray-500">Seller:</span> Me</p>
                         </div>
                         <div className="bg-gray-100 p-2 rounded-full">
                             <User className="w-5 h-5 text-gray-500" />
@@ -184,5 +192,13 @@ export default function BuyerInitiatedBuyerPending() {
         )}
       </div>
     </Layout>
+  );
+}
+
+export default function BuyerInitiatedSellerInvoices() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <SellerInvoicesContent />
+    </Suspense>
   );
 }

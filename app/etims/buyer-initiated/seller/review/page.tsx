@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout, Card, Button, TotalsCard, IdentityStrip } from '../../../_components/Layout';
-import { getBuyerInitiated, BuyerInitiatedInvoice, calculateTotals } from '../../../_lib/store';
+import { submitBuyerInitiatedInvoice } from '../../../../actions/etims';
+import { getBuyerInitiated, BuyerInitiatedInvoice, calculateTotals, getUserSession } from '../../../_lib/store';
 import { Loader2 } from 'lucide-react';
 
 export default function BuyerInitiatedSellerReview() {
@@ -25,10 +26,41 @@ export default function BuyerInitiatedSellerReview() {
   const handleSend = async () => {
     setIsSending(true);
     
-    // Simulate sending to buyer
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    router.push('/etims/buyer-initiated/seller/success');
+    try {
+      const session = getUserSession();
+      if (!session?.msisdn) {
+        alert('User session not found. Please go back to home page.');
+        return;
+      }
+  
+      if (!invoice || !invoice.items || !invoice.buyerPin) {
+        alert('Invalid invoice data: Missing items or Buyer PIN');
+        return;
+      }
+
+      const totals = calculateTotals(invoice.items);
+
+      const result = await submitBuyerInitiatedInvoice({
+        msisdn: session.msisdn,
+        buyer_pin: invoice.buyerPin,
+        total_amount: totals.total,
+        items: invoice.items.map(item => ({
+          item_name: item.name,
+          taxable_amount: item.unitPrice,
+          quantity: item.quantity
+        }))
+      });
+
+      if (result.success) {
+        router.push('/etims/buyer-initiated/seller/success');
+      } else {
+         alert(result.error || 'Failed to submit invoice');
+      }
+    } catch (error: any) {
+      alert(error.message || 'An error occurred while submitting the invoice');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (!mounted || !invoice) {

@@ -42,6 +42,7 @@ export interface BuyerInitiatedInvoice {
   invoiceRef: string;
   sellerName: string;
   buyerName: string;
+  buyerPin?: string;
   amount: number;
   status: 'pending' | 'accepted' | 'rejected';
   items: InvoiceItem[];
