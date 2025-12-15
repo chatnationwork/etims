@@ -20,7 +20,7 @@ export default function CreditNoteSearch() {
   const router = useRouter();
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [creditNoteType, setCreditNoteType] = useState<'partial' | 'full'>('partial');
+  const [creditNoteType, setCreditNoteType] = useState<'partial' | 'full' | ''>('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,6 +42,11 @@ export default function CreditNoteSearch() {
 
     if (!reason) {
       setError('Please select a reason for the credit note');
+      return;
+    }
+
+    if (!creditNoteType) {
+      setError('Please select a credit note type (Partial or Full)');
       return;
     }
 
@@ -77,7 +82,7 @@ export default function CreditNoteSearch() {
         saveCreditNote({ 
           invoice: mappedInvoice, 
           msisdn: phoneNumber,
-          type: creditNoteType,
+          type: creditNoteType as 'partial' | 'full',
           reason: reasonOptions.find(r => r.value === reason)?.label || reason
         });
 
