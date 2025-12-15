@@ -289,7 +289,7 @@ export const PINOrIDInput = forwardRef<HTMLInputElement, PINOrIDInputProps>(
           type="text"
           value={value}
           onChange={handleChange}
-          placeholder="e.g., A012345678Z or 12345678"
+          placeholder="A012345678Z or 12345678"
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase ${
             displayError ? 'border-red-500' : 'border-gray-300'
           } ${className}`}

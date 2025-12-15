@@ -114,7 +114,7 @@ export default function SalesInvoiceBuyer() {
                   value={buyerPinOrId}
                   onChange={setBuyerPinOrId}
                   onValidationChange={handleValidationChange}
-                  helperText="Enter PIN (A012345678Z) or ID (12345678)"
+                  helperText="Enter PIN or ID"
                 />
                 
                 {/* Buyer Name Input */}
