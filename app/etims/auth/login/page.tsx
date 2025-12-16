@@ -3,27 +3,26 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../_components/Layout';
-import { registerTaxpayer, generateOTP, verifyOTP } from '../../../actions/etims';
+import { generateOTP, verifyOTP } from '../../../actions/etims';
 import { saveUserSession } from '../../_lib/store';
-import { Loader2, MessageSquare, CheckCircle } from 'lucide-react';
+import { Loader2, MessageSquare, Shield } from 'lucide-react';
 
-function OTPContent() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phoneNumber = searchParams.get('number') || '';
-  const idNumber = searchParams.get('id') || '';
-  const name = searchParams.get('name') || '';
+  const userName = searchParams.get('name') || '';
+  const userPin = searchParams.get('pin') || '';
   
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   // Auto-send OTP on mount
   useEffect(() => {
-    if (phoneNumber && idNumber && !otpSent) {
+    if (phoneNumber && !otpSent) {
       handleSendOTP();
     }
   }, []);
@@ -48,35 +47,22 @@ function OTPContent() {
 
   const handleVerifyOTP = async () => {
     setError('');
-    if (!otp || otp.length < 4) { setError('Enter valid OTP'); return; }
+    if (!otp || otp.length < 4) { 
+      setError('Enter valid OTP'); 
+      return; 
+    }
 
     setLoading(true);
     
     try {
-      // First verify OTP
-      const otpResult = await verifyOTP(phoneNumber, otp);
+      const result = await verifyOTP(phoneNumber, otp);
       
-      if (!otpResult.success) {
-        setError(otpResult.error || 'Invalid OTP');
-        setLoading(false);
-        return;
-      }
-
-      // OTP valid, now register the user
-      const regResult = await registerTaxpayer(idNumber, phoneNumber);
-      
-      if (regResult.success) {
-        saveUserSession({ msisdn: phoneNumber, name });
-        setSuccess(true);
-        
-        // Mock WhatsApp message
-        console.log('Sending WhatsApp registration confirmation to:', phoneNumber);
-        
-        setTimeout(() => {
-          router.push(`/etims?number=${encodeURIComponent(phoneNumber)}`);
-        }, 2000);
+      if (result.success) {
+        // Save session and go to dashboard
+        saveUserSession({ msisdn: phoneNumber, name: userName, pin: userPin });
+        router.push(`/etims?number=${encodeURIComponent(phoneNumber)}`);
       } else {
-        setError(regResult.error || 'Registration failed');
+        setError(result.error || 'Invalid OTP');
       }
     } catch (err: any) {
       setError(err.message || 'Verification failed');
@@ -85,49 +71,48 @@ function OTPContent() {
     }
   };
 
-  if (!phoneNumber || !idNumber) {
+  if (!phoneNumber) {
     return (
-      <Layout title="Verify OTP" onBack={() => router.push('/etims/auth')}>
+      <Layout title="Verify" onBack={() => router.push('/etims/auth')}>
         <Card className="text-center py-6">
-          <p className="text-red-600 text-sm">Missing information</p>
-          <Button className="mt-3" onClick={() => router.push('/etims/auth')}>Start Over</Button>
+          <p className="text-red-600 text-sm">Phone number missing</p>
+          <Button className="mt-3" onClick={() => router.push('/etims/auth')}>Go Back</Button>
         </Card>
       </Layout>
     );
   }
 
-  if (success) {
-    return (
-      <Layout title="Success" showHeader={false}>
-        <div className="min-h-[70vh] flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Registration Complete!</h1>
-            <p className="text-sm text-gray-500">Welcome to eTIMS, {name.split(' ')[0]}</p>
-          </div>
-          <p className="text-xs text-gray-400">Redirecting to dashboard...</p>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout title="Verify OTP" showHeader={false} onBack={() => router.back()}>
+    <Layout title="Verify Phone" showHeader={false} onBack={() => router.push('/etims/auth')}>
       <div className="space-y-4">
         {/* Header */}
         <div className="bg-[var(--kra-black)] rounded-xl p-4 text-white">
-          <h1 className="text-base font-semibold">OTP Verification</h1>
-          <p className="text-gray-400 text-xs">Step 3/3 - Verify phone number</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-base font-semibold">Verify Your Number</h1>
+              <p className="text-gray-400 text-xs">Enter the OTP sent to your phone</p>
+            </div>
+          </div>
         </div>
 
-        {/* Info */}
+        {/* Welcome */}
+        {userName && (
+          <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-green-700">Welcome back, <span className="font-medium">{userName.split(' ')[0]}</span>!</p>
+          </div>
+        )}
+
+        {/* OTP Status */}
         <Card className="bg-blue-50 border-blue-200">
           <div className="flex items-start gap-2">
             <MessageSquare className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <div className="text-xs text-blue-800">
-              <p className="font-medium">{otpSent ? 'OTP sent to ' : 'Sending OTP to '}{phoneNumber}</p>
+              <p className="font-medium">
+                {otpSent ? 'OTP sent to ' : 'Sending OTP to '}{phoneNumber}
+              </p>
               <p className="text-blue-600">Check your SMS for the verification code</p>
             </div>
           </div>
@@ -143,6 +128,7 @@ function OTPContent() {
             placeholder="Enter code"
             className="w-full px-3 py-2.5 text-center text-lg tracking-widest border border-gray-300 rounded-lg"
             maxLength={6}
+            disabled={loading}
           />
           
           <div className="flex justify-end mt-3">
@@ -163,17 +149,25 @@ function OTPContent() {
         )}
 
         <Button onClick={handleVerifyOTP} disabled={loading || !otp}>
-          {loading ? <><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Verifying...</> : 'Verify & Complete'}
+          {loading ? <><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Verifying...</> : 'Verify & Login'}
         </Button>
+
+        {/* Go Back */}
+        <button 
+          onClick={() => router.push('/etims/auth')}
+          className="w-full text-center text-gray-500 text-xs font-medium py-2"
+        >
+          Use a different number
+        </button>
       </div>
     </Layout>
   );
 }
 
-export default function OTPPage() {
+export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
-      <OTPContent />
+      <LoginContent />
     </Suspense>
   );
 }

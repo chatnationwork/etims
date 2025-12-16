@@ -35,8 +35,13 @@ function AuthContent() {
       saveUserSession({ msisdn, name: result.name });
 
       if (result.isRegistered) {
-        // User is registered - go to dashboard
-        router.push(`/etims?number=${encodeURIComponent(msisdn)}`);
+        // User is registered - go to OTP verification
+        const params = new URLSearchParams({
+          number: msisdn,
+          name: result.name || '',
+          pin: result.pin || ''
+        });
+        router.push(`/etims/auth/login?${params.toString()}`);
       } else {
         // User not registered - go to signup
         router.push(`/etims/auth/signup?number=${encodeURIComponent(msisdn)}`);

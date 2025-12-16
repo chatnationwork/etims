@@ -686,3 +686,84 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
     return { success: false, error: error.response?.data?.message || 'Registration failed' };
   }
 }
+
+export interface GenerateOTPResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Generate and send OTP to user's phone
+ */
+export async function generateOTP(msisdn: string): Promise<GenerateOTPResult> {
+  let cleanNumber = msisdn.trim().replace(/[^\d]/g, '');
+  if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
+  else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
+
+  console.log('Generating OTP for:', cleanNumber);
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/otp`,
+      { msisdn: cleanNumber },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
+    );
+
+    console.log('Generate OTP response:', JSON.stringify(response.data, null, 2));
+
+    return {
+      success: true,
+      message: response.data.message || 'OTP sent successfully'
+    };
+  } catch (error: any) {
+    console.error('Generate OTP error:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Failed to send OTP' 
+    };
+  }
+}
+
+export interface VerifyOTPResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Verify OTP entered by user
+ */
+export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPResult> {
+  let cleanNumber = msisdn.trim().replace(/[^\d]/g, '');
+  if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
+  else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
+
+  console.log('Verifying OTP for:', cleanNumber);
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/validate-otp`,
+      { msisdn: cleanNumber, otp: otp.trim().toUpperCase() },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
+    );
+
+    console.log('Verify OTP response:', JSON.stringify(response.data, null, 2));
+
+    // Check for success (varies by API)
+    if (response.data.code === 0 || response.data.success === false) {
+      return { success: false, error: response.data.message || 'Invalid OTP' };
+    }
+
+    return {
+      success: true,
+      message: response.data.message || 'OTP verified'
+    };
+  } catch (error: any) {
+    console.error('Verify OTP error:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'OTP verification failed' 
+    };
+  }
+}
