@@ -138,7 +138,7 @@ function SellerPendingContent() {
                             )}
                             <td className="py-2 px-1">
                               <span className="font-medium text-gray-800">{invoice.reference || invoice.invoice_id || 'N/A'}</span>
-                              <span className="block text-[10px] text-gray-400">{invoice.buyer_name || 'Unknown'}</span>
+                              <span className="block text-[10px] text-gray-400">Buyer: {invoice.buyer_name || 'Unknown'}</span>
                             </td>
                             <td className="py-2 px-1 text-right font-medium">{(invoice.total_amount || 0).toLocaleString()}</td>
                             <td className="py-2 px-1"><ChevronRight className="w-4 h-4 text-gray-400" /></td>

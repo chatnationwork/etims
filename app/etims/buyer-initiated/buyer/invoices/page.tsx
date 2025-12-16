@@ -2,13 +2,13 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Layout, Card, Input, Button } from '../../../_components/Layout';
+import { Layout, Card, Button } from '../../../_components/Layout';
 import { fetchInvoices } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
-import { ChevronRight, Loader2, Phone, User } from 'lucide-react';
+import { ChevronRight, Loader2, Phone, FileText } from 'lucide-react';
 import { getUserSession } from '../../../_lib/store';
 
-function SellerInvoicesContent() {
+function BuyerInvoicesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status') || 'pending';
@@ -20,11 +20,11 @@ function SellerInvoicesContent() {
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState('');
 
-  const getTitle = () => {
-    switch(statusFilter) {
-      case 'completed': return 'Completed Invoices';
-      case 'rejected': return 'Rejected Invoices';
-      default: return 'Pending Invoices';
+  const getPageTitle = () => {
+    switch (statusFilter) {
+      case 'approved': return 'Approved';
+      case 'rejected': return 'Rejected';
+      default: return 'Pending';
     }
   };
 
@@ -42,150 +42,113 @@ function SellerInvoicesContent() {
     if (!phone.trim()) return;
     setLoading(true);
     setError('');
-    
     try {
       const result = await fetchInvoices(phone);
       if (result.success && result.invoices) {
-        setInvoices(result.invoices);
+        let filtered = result.invoices;
+        if (statusFilter === 'approved') filtered = result.invoices.filter(inv => inv.status === 'approved' || inv.status === 'accepted');
+        else if (statusFilter === 'rejected') filtered = result.invoices.filter(inv => inv.status === 'rejected');
+        else filtered = result.invoices.filter(inv => !inv.status || inv.status === 'pending');
+        setInvoices(filtered);
       } else {
         setError(result.error || 'No invoices found');
-        if (result.success && !result.invoices) {
-            setInvoices([]);
-        }
+        if (result.success) setInvoices([]);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch invoices');
+      setError(err.message || 'Failed to fetch');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFetchInvoices = () => {
-    if (phoneNumber) {
-        setIsPhoneSet(true);
-        fetchInvoicesData(phoneNumber);
+  const handleFetchInvoices = () => { 
+    if (phoneNumber) { 
+      setIsPhoneSet(true); 
+      fetchInvoicesData(phoneNumber); 
     }
   };
 
   const handleInvoiceClick = (invoice: FetchedInvoice) => {
     const invoiceId = invoice.invoice_id || invoice.reference;
-    router.push(`/etims/buyer-initiated/seller/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}`);
+    // Navigate to BUYER view, not seller view
+    router.push(`/etims/buyer-initiated/buyer/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}&status=${statusFilter}`);
   };
 
   if (initializing) {
     return (
-        <Layout title={getTitle()} onBack={() => router.push('/etims/buyer-initiated')}>
-            <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-                <p className="text-gray-500">Loading...</p>
-            </div>
-        </Layout>
+      <Layout title={getPageTitle()} onBack={() => router.push('/etims/buyer-initiated')}>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin" />
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <Layout 
-      title={getTitle()}
-      onBack={() => {
-        if (isPhoneSet && !getUserSession()?.msisdn) {
-          setIsPhoneSet(false);
-          setInvoices([]);
-        } else {
-          router.push('/etims/buyer-initiated');
-        }
-      }}
-    >
-      <div className="space-y-4">
+    <Layout title={`${getPageTitle()} Invoices`} onBack={() => router.push('/etims/buyer-initiated')}>
+      <div className="space-y-3">
         {!isPhoneSet ? (
           <Card>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-gray-900 font-medium pb-2 border-b border-gray-100">
-                <Phone className="w-5 h-5 text-gray-500" />
-                <h3>Enter Your Phone Number</h3>
-              </div>
-              <p className="text-sm text-gray-600">
-                Enter your phone number to check invoices you have sent.
-              </p>
-              <Input
-                label="Phone Number"
-                value={phoneNumber}
-                onChange={setPhoneNumber}
-                placeholder="e.g. 0712345678"
-                required
-              />
-              {error && (
-                <p className="text-sm text-red-600">{error}</p>
-              )}
-              <Button 
-                onClick={handleFetchInvoices} 
-                disabled={!phoneNumber.trim() || loading}
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Checking...</span>
-                  </div>
-                ) : 'View Invoices'}
-              </Button>
+            <div className="flex items-center gap-2 mb-3">
+              <Phone className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Enter Phone Number</span>
             </div>
+            <input 
+              type="tel" 
+              value={phoneNumber} 
+              onChange={(e) => setPhoneNumber(e.target.value)} 
+              placeholder="0712345678"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg mb-2" 
+            />
+            {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+            <Button onClick={handleFetchInvoices} disabled={!phoneNumber.trim() || loading}>
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Checking...</> : 'View Invoices'}
+            </Button>
           </Card>
         ) : (
           <>
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-                    <p>Fetching invoices...</p>
-                </div>
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
             ) : invoices.length === 0 ? (
-              <Card className="text-center py-8">
-                <p className="text-gray-600">No sent invoices found for {phoneNumber}</p>
-                {!getUserSession()?.msisdn && (
-                    <div className="mt-4">
-                        <Button variant="secondary" onClick={() => setIsPhoneSet(false)}>Check Another Number</Button>
-                    </div>
-                )}
+              <Card className="text-center py-6">
+                <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No {statusFilter} invoices</p>
               </Card>
             ) : (
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <p className="text-xs text-amber-800 font-medium">This flow is only for testing</p>
-                </div>
-                
-                <div className="space-y-3">
-                {invoices.map((invoice, idx) => (
-                  <button
-                    key={invoice.invoice_id || idx}
-                    onClick={() => handleInvoiceClick(invoice)}
-                    className="w-full text-left transition-all hover:bg-gray-50 rounded-xl"
-                  >
-                    <Card className="border border-gray-200 shadow-sm hover:border-blue-300">
-                      <div className="flex justify-between items-start mb-1">
-                        <div>
-                            <h4 className="text-gray-900 font-bold text-lg">{invoice.reference || invoice.invoice_id || 'N/A'}</h4>
-                            <p className="text-xs text-gray-500">(Tap to open)</p>
-                        </div>
-                        <span className="text-gray-900 font-bold text-lg">
-                            {(invoice.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      
-                      <div className="border-t border-gray-100 my-3"></div>
-
-                      <div className="flex items-end justify-between">
-                        <div className="text-sm text-gray-600 space-y-1">
-                            {/* In Seller View: 'Buyer' is the other party (name in list), 'Seller' is Me */}
-                            <p><span className="font-medium text-gray-500">Buyer:</span> {invoice.seller_name}</p> 
-                            <p><span className="font-medium text-gray-500">Seller:</span> Me</p>
-                        </div>
-                        <div className="bg-gray-100 p-2 rounded-full">
-                            <User className="w-5 h-5 text-gray-500" />
-                        </div>
-                      </div>
-                    </Card>
-                  </button>
-                ))}
-                </div>
+                {/* Invoice Table */}
+                <Card>
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50">
+                      <tr className="border-b">
+                        <th className="text-left py-1.5 px-1 font-medium text-gray-600">Invoice</th>
+                        <th className="text-right py-1.5 px-1 font-medium text-gray-600">Amount</th>
+                        <th className="w-6"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map((invoice, idx) => {
+                        const invoiceId = invoice.invoice_id || invoice.reference || String(idx);
+                        return (
+                          <tr 
+                            key={invoiceId} 
+                            onClick={() => handleInvoiceClick(invoice)} 
+                            className="border-b last:border-0 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <td className="py-2 px-1">
+                              <span className="font-medium text-gray-800">{invoice.reference || invoice.invoice_id || 'N/A'}</span>
+                              <span className="block text-[10px] text-gray-400">Seller: {invoice.seller_name || 'Unknown'}</span>
+                            </td>
+                            <td className="py-2 px-1 text-right font-medium">{(invoice.total_amount || 0).toLocaleString()}</td>
+                            <td className="py-2 px-1"><ChevronRight className="w-4 h-4 text-gray-400" /></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </Card>
               </>
             )}
           </>
@@ -195,10 +158,10 @@ function SellerInvoicesContent() {
   );
 }
 
-export default function BuyerInitiatedSellerInvoices() {
+export default function BuyerInvoices() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
-      <SellerInvoicesContent />
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center text-sm">Loading...</div>}>
+      <BuyerInvoicesContent />
     </Suspense>
   );
 }

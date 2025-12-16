@@ -101,7 +101,7 @@ function LoginContent() {
         {/* Welcome */}
         {userName && (
           <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-            <p className="text-xs text-green-700">Welcome back, <span className="font-medium">{userName.split(' ')[0]}</span>!</p>
+            <p className="text-xs text-green-700">Welcome back, <span className="font-medium">{userName}</span>!</p>
           </div>
         )}
 
