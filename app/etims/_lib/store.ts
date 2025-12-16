@@ -41,13 +41,18 @@ export interface BuyerInitiatedInvoice {
   id: string;
   invoiceRef: string;
   sellerName: string;
+  sellerPin?: string;
+  sellerPhone?: string;
+  sellerEmail?: string;
   buyerName: string;
   buyerPin?: string;
   amount: number;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'approved';
   items: InvoiceItem[];
   date: string;
   rejectionReason?: string;
+  transactionType?: 'b2b' | 'b2c';
+  taxType?: 'vat' | 'non-vat';
 }
 
 // Storage keys

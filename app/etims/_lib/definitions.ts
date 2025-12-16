@@ -44,7 +44,7 @@ export interface FetchedInvoice {
   invoice_id: string;
   reference: string;
   total_amount: number;
-  status: 'pending' | 'completed' | 'rejected';
+  status: 'pending' | 'completed' | 'rejected' | 'approved' | 'accepted';
   buyer_name: string;
   seller_name: string;
   created_at: string;
@@ -132,8 +132,9 @@ export interface SubmitCreditNoteResult {
 
 // Submit Buyer Initiated Invoice Request
 export interface SubmitBuyerInitiatedInvoiceRequest {
-  msisdn: string; // Seller's phone
-  buyer_pin: string;
+  msisdn: string; // Buyer's phone
+  seller_pin: string;
+  seller_msisdn?: string;
   total_amount: number;
   items: {
     item_name: string;

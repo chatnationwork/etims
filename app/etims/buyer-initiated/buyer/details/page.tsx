@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Layout, Card, Input, Button, TotalsCard, IdentityStrip } from '../../../_components/Layout';
+import { Layout, Card, Input, Button } from '../../../_components/Layout';
 import { saveBuyerInitiated, getBuyerInitiated, calculateTotals, InvoiceItem } from '../../../_lib/store';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar } from 'lucide-react';
 
-export default function BuyerInitiatedSellerDetails() {
+export default function BuyerInitiatedDetails() {
   const router = useRouter();
-  const [buyerName, setBuyerName] = useState('');
+  const [sellerName, setSellerName] = useState('');
+  const [itemMode, setItemMode] = useState<'single' | 'multiple'>('single');
+  const [taxType, setTaxType] = useState<'vat' | 'non-vat'>('non-vat');
   const [itemType, setItemType] = useState<'product' | 'service'>('product');
   const [itemName, setItemName] = useState('');
   const [description, setDescription] = useState('');
@@ -17,15 +19,20 @@ export default function BuyerInitiatedSellerDetails() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [invoiceDate] = useState(new Date().toLocaleDateString('en-GB', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  }));
 
   useEffect(() => {
     setMounted(true);
     const saved = getBuyerInitiated();
-    if (!saved?.buyerName) {
-      router.push('/etims/buyer-initiated/seller/create');
+    if (!saved?.sellerName) {
+      router.push('/etims/buyer-initiated/buyer/create');
       return;
     }
-    setBuyerName(saved.buyerName);
+    setSellerName(saved.sellerName);
     if (saved.items) {
       setItems(saved.items);
     }
@@ -34,7 +41,6 @@ export default function BuyerInitiatedSellerDetails() {
   const totals = calculateTotals(items);
 
   const handleAddItem = () => {
-    // Validate each field with specific error messages
     if (!itemName.trim()) {
       alert('Item name is required. Please enter a name for this item.');
       return;
@@ -73,11 +79,18 @@ export default function BuyerInitiatedSellerDetails() {
       setItems([...items, newItem]);
     }
 
+    // Clear form
     setItemName('');
     setDescription('');
     setUnitPrice('');
     setQuantity('1');
     setItemType('product');
+
+    // If single item mode, go to preview
+    if (itemMode === 'single') {
+      saveBuyerInitiated({ items: [newItem], amount: newItem.unitPrice * newItem.quantity, taxType });
+      router.push('/etims/buyer-initiated/buyer/review');
+    }
   };
 
   const handleEditItem = (item: InvoiceItem) => {
@@ -103,13 +116,13 @@ export default function BuyerInitiatedSellerDetails() {
     }
   };
 
-  const handleReview = () => {
+  const handleContinue = () => {
     if (items.length === 0) {
       alert('Please add at least one item');
       return;
     }
-    saveBuyerInitiated({ items, amount: totals.total });
-    router.push('/etims/buyer-initiated/seller/review');
+    saveBuyerInitiated({ items, amount: totals.total, taxType });
+    router.push('/etims/buyer-initiated/buyer/review');
   };
 
   if (!mounted) {
@@ -118,138 +131,231 @@ export default function BuyerInitiatedSellerDetails() {
 
   return (
     <Layout 
-      title="Item Details" 
-      step="Step 2 of 3"
-      onBack={() => router.push('/etims/buyer-initiated/seller/create')}
+      title="Item Creation"
+      showHeader={false}
+      onBack={() => router.push('/etims/buyer-initiated/buyer/create')}
     >
       <div className="space-y-4">
-        <IdentityStrip label="Buyer" value={buyerName} />
+        {/* Header */}
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white">
+          <h1 className="text-xl font-bold mb-1">Item Creation</h1>
+          <p className="text-blue-100 text-sm">Screen 3 of 4 - Define transaction items</p>
+          <div className="mt-3 flex items-center gap-2 text-blue-100 text-sm">
+            <span>Seller:</span>
+            <span className="font-medium text-white">{sellerName}</span>
+          </div>
+        </div>
 
+        {/* Item Mode Selection */}
         <Card>
-          <p className="text-sm text-gray-700 mb-3 font-medium">Item Type</p>
-          <div className="flex gap-3">
+          <p className="text-sm text-gray-700 font-medium mb-3">Item Type Selection</p>
+          <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => setItemType('product')}
-              className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors font-medium ${
-                itemType === 'product'
+              onClick={() => setItemMode('single')}
+              className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${
+                itemMode === 'single'
                   ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                  : 'border-gray-200 bg-white text-gray-600'
               }`}
             >
-              Product
+              Single Item
             </button>
             <button
-              onClick={() => setItemType('service')}
-              className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors font-medium ${
-                itemType === 'service'
+              onClick={() => setItemMode('multiple')}
+              className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${
+                itemMode === 'multiple'
                   ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                  : 'border-gray-200 bg-white text-gray-600'
               }`}
             >
-              Service
+              Multiple Items
             </button>
           </div>
         </Card>
 
+        {/* Tax Information */}
+        <Card>
+          <p className="text-sm text-gray-700 font-medium mb-3">Type of Tax</p>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+            <span className="text-gray-900 font-medium">Non-VAT</span>
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Default</span>
+          </div>
+        </Card>
+
+        {/* Item Details */}
         <Card>
           <h3 className="text-gray-900 font-medium mb-4">Item Details</h3>
+          
+          {/* Product/Service Toggle */}
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">Item Type</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setItemType('product')}
+                className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                  itemType === 'product'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 text-gray-600'
+                }`}
+              >
+                Products
+              </button>
+              <button
+                onClick={() => setItemType('service')}
+                className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                  itemType === 'service'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 text-gray-600'
+                }`}
+              >
+                Services
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-4">
-            <Input
-              label="Item Name"
-              value={itemName}
-              onChange={setItemName}
-              placeholder="Enter item name"
-              required
-            />
-            <Input
-              label="Description"
-              value={description}
-              onChange={setDescription}
-              placeholder="Optional description"
-            />
-            <Input
-              label="Unit Price (KES)"
-              value={unitPrice}
-              onChange={setUnitPrice}
-              placeholder="0.00"
-              type="number"
-              required
-            />
-            <Input
-              label="Quantity"
-              value={quantity}
-              onChange={setQuantity}
-              placeholder="1"
-              type="number"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product/Service Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder="Enter name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Description <span className="text-gray-400">(max 600 chars)</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 600))}
+                placeholder="Optional description"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-1">{description.length}/600</p>
+            </div>
+
+            {/* Invoice Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Date</label>
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                <Calendar className="w-5 h-5 text-gray-400" />
+                <span className="text-gray-900">{invoiceDate}</span>
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Unit Price <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantity <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="1"
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
-          <div className="mt-4">
-            <Button onClick={handleAddItem}>
-              {editingId ? (
-                <>
-                  <Edit2 className="w-4 h-4 inline mr-2" />
-                  Update Item
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 inline mr-2" />
-                  Add Item
-                </>
-              )}
-            </Button>
-          </div>
+
+          {/* Add Item Button */}
+          <button
+            onClick={handleAddItem}
+            className="w-full mt-4 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+          >
+            {editingId ? (
+              <>
+                <Edit2 className="w-4 h-4" />
+                Update Item
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                {itemMode === 'single' ? 'Add Item & Continue' : 'Add Item'}
+              </>
+            )}
+          </button>
         </Card>
 
-        {items.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-gray-900 font-medium">Items ({items.length})</h3>
-            {items.map((item) => (
-              <Card key={item.id} className="bg-gray-50">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-                        {item.type}
-                      </span>
-                      <h4 className="text-gray-900 font-medium">{item.name}</h4>
+        {/* Added Items List (Multiple mode only) */}
+        {itemMode === 'multiple' && items.length > 0 && (
+          <Card>
+            <h3 className="text-gray-900 font-medium mb-3">Items ({items.length})</h3>
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div key={item.id} className="p-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
+                          {item.type}
+                        </span>
+                        <h4 className="text-gray-900 font-medium">{item.name}</h4>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Qty: {item.quantity} × KES {item.unitPrice.toLocaleString()} = KES {(item.unitPrice * item.quantity).toLocaleString()}
+                      </p>
                     </div>
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                    )}
-                    <p className="text-sm text-gray-700">
-                      KES {item.unitPrice.toLocaleString()} × {item.quantity} = KES {(item.unitPrice * item.quantity).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditItem(item)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      aria-label="Edit item"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditItem(item)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Total */}
+            <div className="mt-4 p-4 bg-gray-900 rounded-xl text-white">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Total Amount</span>
+                <span className="text-2xl font-bold">KES {totals.total.toLocaleString()}</span>
+              </div>
+            </div>
+          </Card>
         )}
 
-        {items.length > 0 && (
-          <TotalsCard subtotal={totals.subtotal} tax={totals.tax} total={totals.total} />
+        {/* Continue Button (Multiple mode) */}
+        {itemMode === 'multiple' && items.length > 0 && (
+          <button
+            onClick={handleContinue}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+          >
+            Continue
+          </button>
         )}
-
-        <Button onClick={handleReview} disabled={items.length === 0}>
-          Continue
-        </Button>
       </div>
     </Layout>
   );

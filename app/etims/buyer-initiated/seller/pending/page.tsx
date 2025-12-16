@@ -1,28 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Input, Button } from '../../../_components/Layout';
 import { fetchInvoices } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
-import { ChevronRight, Loader2, Phone, User } from 'lucide-react';
+import { ChevronRight, Loader2, Phone, User, FileText, Check, Square, CheckSquare } from 'lucide-react';
 import { getUserSession } from '../../../_lib/store';
 
-export default function BuyerInitiatedBuyerPending() {
+function SellerPendingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status') || 'pending';
+  
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isPhoneSet, setIsPhoneSet] = useState(false);
   const [invoices, setInvoices] = useState<FetchedInvoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState('');
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+
+  const getPageTitle = () => {
+    switch (statusFilter) {
+      case 'approved': return 'Approved Invoice';
+      case 'rejected': return 'Rejected Invoice';
+      default: return 'Pending Invoice';
+    }
+  };
 
   useEffect(() => {
     const session = getUserSession();
     if (session?.msisdn) {
       setPhoneNumber(session.msisdn);
       setIsPhoneSet(true);
-      // Auto fetch if number exists
       fetchInvoicesData(session.msisdn);
     }
     setInitializing(false);
@@ -36,12 +47,20 @@ export default function BuyerInitiatedBuyerPending() {
     try {
       const result = await fetchInvoices(phone);
       if (result.success && result.invoices) {
-        setInvoices(result.invoices);
-        // setIsPhoneSet(true); // Already set if auto-fetching, but ensures manual fetch works too
+        // Filter by status
+        let filtered = result.invoices;
+        if (statusFilter === 'approved') {
+          filtered = result.invoices.filter(inv => inv.status === 'approved' || inv.status === 'accepted');
+        } else if (statusFilter === 'rejected') {
+          filtered = result.invoices.filter(inv => inv.status === 'rejected');
+        } else {
+          filtered = result.invoices.filter(inv => !inv.status || inv.status === 'pending');
+        }
+        setInvoices(filtered);
       } else {
         setError(result.error || 'No invoices found');
         if (result.success && !result.invoices) {
-            setInvoices([]);
+          setInvoices([]);
         }
       }
     } catch (err: any) {
@@ -53,34 +72,52 @@ export default function BuyerInitiatedBuyerPending() {
 
   const handleFetchInvoices = () => {
     if (phoneNumber) {
-        setIsPhoneSet(true);
-        fetchInvoicesData(phoneNumber);
+      setIsPhoneSet(true);
+      fetchInvoicesData(phoneNumber);
     }
   };
 
   const handleInvoiceClick = (invoice: FetchedInvoice) => {
-    // Pass phone number to view page to allow re-fetching or actions context
-    const invoiceId = invoice.invoice_id || invoice.reference; // Use available ID
-    router.push(`/etims/buyer-initiated/buyer/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}`);
+    const invoiceId = invoice.invoice_id || invoice.reference;
+    router.push(`/etims/buyer-initiated/seller/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}`);
+  };
+
+  const toggleInvoiceSelection = (invoiceId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedInvoices);
+    if (newSelected.has(invoiceId)) {
+      newSelected.delete(invoiceId);
+    } else {
+      newSelected.add(invoiceId);
+    }
+    setSelectedInvoices(newSelected);
+  };
+
+  const handleBulkAction = (action: 'approve' | 'reject') => {
+    if (selectedInvoices.size === 0) {
+      alert('Please select at least one invoice');
+      return;
+    }
+    // For now, alert - actual implementation would process each
+    alert(`${action === 'approve' ? 'Approving' : 'Rejecting'} ${selectedInvoices.size} invoice(s)...`);
   };
 
   if (initializing) {
     return (
-        <Layout title="Invoices Awaiting Action" onBack={() => router.push('/etims/buyer-initiated')}>
-            <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-                <p className="text-gray-500">Loading...</p>
-            </div>
-        </Layout>
+      <Layout title={getPageTitle()} onBack={() => router.push('/etims/buyer-initiated')}>
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
     <Layout 
-      title="Invoices Awaiting Action" 
+      title={getPageTitle()}
       onBack={() => {
         if (isPhoneSet && !getUserSession()?.msisdn) {
-          // Only go back to input if manually entered, otherwise go back to menu
           setIsPhoneSet(false);
           setInvoices([]);
         } else {
@@ -97,7 +134,7 @@ export default function BuyerInitiatedBuyerPending() {
                 <h3>Enter Your Phone Number</h3>
               </div>
               <p className="text-sm text-gray-600">
-                Please enter your phone number to view pending invoices sent to you.
+                Please enter your phone number to view invoices sent to you.
               </p>
               <Input
                 label="Phone Number"
@@ -125,58 +162,105 @@ export default function BuyerInitiatedBuyerPending() {
         ) : (
           <>
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-                    <p>Fetching invoices...</p>
-                </div>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+                <p>Fetching invoices...</p>
+              </div>
             ) : invoices.length === 0 ? (
               <Card className="text-center py-8">
-                <p className="text-gray-600">No pending invoices found for {phoneNumber}</p>
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600">No {statusFilter} invoices found</p>
                 {!getUserSession()?.msisdn && (
-                    <div className="mt-4">
-                        <Button variant="secondary" onClick={() => setIsPhoneSet(false)}>Check Another Number</Button>
-                    </div>
+                  <div className="mt-4">
+                    <Button variant="secondary" onClick={() => setIsPhoneSet(false)}>Check Another Number</Button>
+                  </div>
                 )}
               </Card>
             ) : (
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <p className="text-xs text-amber-800 font-medium">This flow is only for testing</p>
-                </div>
-                
-                <div className="space-y-3">
-                {invoices.map((invoice, idx) => (
-                  <button
-                    key={invoice.invoice_id || idx}
-                    onClick={() => handleInvoiceClick(invoice)}
-                    className="w-full text-left transition-all hover:bg-gray-50 rounded-xl"
-                  >
-                    <Card className="border border-gray-200 shadow-sm hover:border-blue-300">
-                      <div className="flex justify-between items-start mb-1">
-                        <div>
-                            <h4 className="text-gray-900 font-bold text-lg">{invoice.reference || invoice.invoice_id || 'N/A'}</h4>
-                            <p className="text-xs text-gray-500">(Tap to open)</p>
-                        </div>
-                        <span className="text-gray-900 font-bold text-lg">
-                            {(invoice.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      
-                      <div className="border-t border-gray-100 my-3"></div>
+                {/* Bulk Actions (Only for pending) */}
+                {statusFilter === 'pending' && selectedInvoices.size > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                    <span className="text-sm text-blue-800 font-medium">
+                      {selectedInvoices.size} selected
+                    </span>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleBulkAction('reject')}
+                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg font-medium"
+                      >
+                        Reject
+                      </button>
+                      <button 
+                        onClick={() => handleBulkAction('approve')}
+                        className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg font-medium"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                      <div className="flex items-end justify-between">
-                        <div className="text-sm text-gray-600 space-y-1">
-                            <p><span className="font-medium text-gray-500">Buyer:</span> {invoice.buyer_name || 'Me'}</p>
-                            <p><span className="font-medium text-gray-500">Seller:</span> {invoice.seller_name || 'Unknown'}</p>
+                {/* Invoice List */}
+                <div className="space-y-3">
+                  {invoices.map((invoice, idx) => {
+                    const invoiceId = invoice.invoice_id || invoice.reference || String(idx);
+                    const isSelected = selectedInvoices.has(invoiceId);
+                    
+                    return (
+                      <button
+                        key={invoiceId}
+                        onClick={() => handleInvoiceClick(invoice)}
+                        className="w-full text-left transition-all active:scale-[0.98]"
+                      >
+                        <div className={`bg-white rounded-xl border-2 p-4 ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                          {/* Header: ID and Amount */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              {/* Checkbox (only for pending) */}
+                              {statusFilter === 'pending' && (
+                                <div 
+                                  onClick={(e) => toggleInvoiceSelection(invoiceId, e)}
+                                  className="flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-6 h-6 text-blue-600" />
+                                  ) : (
+                                    <Square className="w-6 h-6 text-gray-400" />
+                                  )}
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="text-gray-900 font-bold text-lg">
+                                  {invoice.reference || invoice.invoice_id || 'N/A'}
+                                </h4>
+                                <p className="text-xs text-gray-500">Tap to view details</p>
+                              </div>
+                            </div>
+                            <span className="text-gray-900 font-bold text-lg">
+                              {(invoice.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          
+                          {/* Divider */}
+                          <div className="border-t border-gray-100 my-3"></div>
+
+                          {/* Buyer & Seller */}
+                          <div className="flex items-end justify-between">
+                            <div className="text-sm space-y-1">
+                              <p className="text-gray-600">
+                                <span className="text-gray-400">Buyer:</span> {invoice.buyer_name || 'Unknown'}
+                              </p>
+                              <p className="text-gray-600">
+                                <span className="text-gray-400">Seller:</span> {invoice.seller_name || 'You'}
+                              </p>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </div>
                         </div>
-                        <div className="bg-gray-100 p-2 rounded-full">
-                            <User className="w-5 h-5 text-gray-500" />
-                        </div>
-                      </div>
-                    </Card>
-                  </button>
-                ))}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -184,5 +268,13 @@ export default function BuyerInitiatedBuyerPending() {
         )}
       </div>
     </Layout>
+  );
+}
+
+export default function SellerPending() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <SellerPendingContent />
+    </Suspense>
   );
 }

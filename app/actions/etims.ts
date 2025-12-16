@@ -497,19 +497,23 @@ export async function processBuyerInvoice(
 }
 
 /**
- * Submit buyer initiated invoice (Seller creates, Buyer approves)
+ * Submit buyer initiated invoice (Buyer creates, Seller approves)
  */
 export async function submitBuyerInitiatedInvoice(
   request: SubmitBuyerInitiatedInvoiceRequest
 ): Promise<SubmitBuyerInitiatedInvoiceResult> {
   // Validate request
-  if (!request.msisdn) throw new Error('Seller phone number is required');
-  if (!request.buyer_pin) throw new Error('Buyer PIN is required');
+  if (!request.msisdn) throw new Error('Buyer phone number is required');
+  if (!request.seller_pin) throw new Error('Seller PIN is required');
   if (!request.items || request.items.length === 0) throw new Error('At least one item is required');
 
   let cleanNumber = request.msisdn.trim().replace(/[^\d]/g, '');
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
+
+  let cleanSellerNumber = request.seller_msisdn?.trim().replace(/[^\d]/g, '') || '';
+  if (cleanSellerNumber.startsWith('0')) cleanSellerNumber = '254' + cleanSellerNumber.substring(1);
+  else if (cleanSellerNumber && !cleanSellerNumber.startsWith('254')) cleanSellerNumber = '254' + cleanSellerNumber;
 
   console.log('Submitting buyer initiated invoice:', JSON.stringify({ ...request, msisdn: cleanNumber }, null, 2));
 
@@ -518,7 +522,8 @@ export async function submitBuyerInitiatedInvoice(
       `${BASE_URL}/buyer-initiated/submit/invoice`,
       {
         msisdn: cleanNumber,
-        buyer_pin: request.buyer_pin,
+        seller_pin: request.seller_pin,
+        seller_msisdn: cleanSellerNumber || undefined,
         total_amount: request.total_amount,
         items: request.items
       },
