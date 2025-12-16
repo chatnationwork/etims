@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../../_components/Layout';
 import { fetchInvoices, processBuyerInvoice } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
+import { getUserSession } from '../../../_lib/store';
 import { Loader2, Download, ArrowLeft, Store } from 'lucide-react';
 
 function SellerViewContent() {
@@ -15,12 +16,20 @@ function SellerViewContent() {
   const fromStatus = searchParams.get('status') || 'pending';
   
   const [invoice, setInvoice] = useState<FetchedInvoice | null>(null);
+  const [sellerName, setSellerName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedAction, setSelectedAction] = useState<'approve' | 'reject' | ''>('');
 
   useEffect(() => {
+    // Get seller name from session
+    const session = getUserSession();
+    if (session?.name) {
+      setSellerName(session.name);
+    } else if (session?.msisdn) {
+      setSellerName(`+${session.msisdn}`);
+    }
     if (!id || !phone) { setIsLoading(false); setError('Missing data'); return; }
     const loadInvoice = async () => {
       try {
@@ -73,7 +82,7 @@ function SellerViewContent() {
           </div>
           <div className="bg-gray-100 rounded-lg px-3 py-2">
             <p className="text-[10px] text-gray-500">SELLER</p>
-            <p className="text-sm font-medium truncate">{invoice.seller_name || 'You'}</p>
+            <p className="text-sm font-medium truncate">{invoice.seller_name || sellerName || 'N/A'}</p>
           </div>
         </div>
 
