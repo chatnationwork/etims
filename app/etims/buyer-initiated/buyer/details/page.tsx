@@ -112,12 +112,18 @@ export default function BuyerInitiatedDetails() {
         {/* Item Type */}
         <Card>
           <p className="text-[10px] text-gray-500 mb-1.5">ITEM TYPE</p>
-          <div className="flex gap-1">
+          <div className="flex gap-4">
             {(['product', 'service'] as const).map(type => (
-              <button key={type} onClick={() => setItemType(type)}
-                className={`flex-1 py-1.5 rounded text-xs font-medium ${itemType === type ? 'bg-[var(--kra-red)] text-white' : 'bg-gray-100 text-gray-600'}`}>
-                {type === 'product' ? 'Product' : 'Service'}
-              </button>
+              <label key={type} className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name="itemType"
+                  checked={itemType === type}
+                  onChange={() => setItemType(type)}
+                  className="w-4 h-4 text-[var(--kra-red)]"
+                />
+                <span className="text-sm text-gray-700">{type === 'product' ? 'Product' : 'Service'}</span>
+              </label>
             ))}
           </div>
         </Card>

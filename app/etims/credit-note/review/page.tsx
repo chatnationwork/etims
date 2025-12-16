@@ -129,12 +129,7 @@ export default function CreditNoteReview() {
             <div className="space-y-3">
               {creditNote.items?.map(({ item, quantity }) => (
                 <div key={item.id} className="pb-3 border-b border-gray-200 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-                      {item.type}
-                    </span>
-                    <h4 className="text-gray-900 font-medium">{item.name}</h4>
-                  </div>
+                  <h4 className="text-gray-900 font-medium mb-1">{item.name}</h4>
                   {item.description && (
                     <p className="text-sm text-gray-600 mb-1">{item.description}</p>
                   )}

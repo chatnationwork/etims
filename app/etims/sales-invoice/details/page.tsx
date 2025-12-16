@@ -127,30 +127,30 @@ export default function SalesInvoiceDetails() {
       onBack={() => router.push('/etims/sales-invoice/buyer')}
     >
       <div className="space-y-3">
-        {/* Item Type - Compact for mobile */}
+        {/* Item Type - Radio buttons for mobile */}
         <Card>
           <p className="text-xs text-gray-600 mb-2 font-medium">Item Type</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setItemType('product')}
-              className={`flex-1 py-2 px-3 rounded-lg border-2 transition-colors text-sm font-medium ${
-                itemType === 'product'
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              Product
-            </button>
-            <button
-              onClick={() => setItemType('service')}
-              className={`flex-1 py-2 px-3 rounded-lg border-2 transition-colors text-sm font-medium ${
-                itemType === 'service'
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              Service
-            </button>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name="itemType"
+                checked={itemType === 'product'}
+                onChange={() => setItemType('product')}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">Product</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name="itemType"
+                checked={itemType === 'service'}
+                onChange={() => setItemType('service')}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">Service</span>
+            </label>
           </div>
         </Card>
 
@@ -241,12 +241,7 @@ export default function SalesInvoiceDetails() {
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-2">
-                        <div className="flex flex-col">
-                          <span className="text-gray-900 font-medium text-xs">{item.name}</span>
-                          <span className="text-xs text-gray-400">{item.type}</span>
-                        </div>
-                      </td>
+                      <td className="py-2 text-gray-900 font-medium text-xs">{item.name}</td>
                       <td className="text-right py-2 text-xs text-gray-700">
                         {item.unitPrice.toLocaleString()}
                       </td>

@@ -85,10 +85,7 @@ export default function BuyerInitiatedReview() {
             <tbody>
               {invoice.items?.map((item) => (
                 <tr key={item.id} className="border-b last:border-0">
-                  <td className="py-1.5 px-1">
-                    <span className="text-gray-800">{item.name}</span>
-                    <span className="block text-[10px] text-gray-400">{item.type}</span>
-                  </td>
+                  <td className="py-1.5 px-1 text-gray-800">{item.name}</td>
                   <td className="py-1.5 px-1 text-center text-gray-600">{item.quantity} × {item.unitPrice.toLocaleString()}</td>
                   <td className="py-1.5 px-1 text-right font-medium">{(item.unitPrice * item.quantity).toLocaleString()}</td>
                 </tr>

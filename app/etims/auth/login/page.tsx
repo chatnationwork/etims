@@ -151,14 +151,6 @@ function LoginContent() {
         <Button onClick={handleVerifyOTP} disabled={loading || !otp}>
           {loading ? <><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Verifying...</> : 'Verify & Login'}
         </Button>
-
-        {/* Go Back */}
-        <button 
-          onClick={() => router.push('/etims/auth')}
-          className="w-full text-center text-gray-500 text-xs font-medium py-2"
-        >
-          Use a different number
-        </button>
       </div>
     </Layout>
   );
