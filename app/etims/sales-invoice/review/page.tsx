@@ -105,12 +105,12 @@ export default function SalesInvoiceReview() {
           <div className="grid grid-cols-2 gap-2 mb-3 pb-2 border-b border-gray-200">
             <div className="bg-gray-50 rounded px-2 py-1.5">
               <p className="text-[10px] text-gray-500 uppercase">Seller</p>
-              <p className="text-xs font-medium text-gray-800 truncate">{sellerName || 'N/A'}</p>
+              <p className="text-[10px] font-medium text-gray-800 truncate">{sellerName || 'N/A'}</p>
             </div>
             {invoice.buyer && (
               <div className="bg-blue-50 rounded px-2 py-1.5">
                 <p className="text-[10px] text-blue-600 uppercase">Buyer</p>
-                <p className="text-xs font-medium text-blue-800 truncate">{invoice.buyer.name || invoice.buyer.pin}</p>
+                <p className="text-[10px] font-medium text-blue-800 truncate">{invoice.buyer.name || invoice.buyer.pin}</p>
               </div>
             )}
           </div>

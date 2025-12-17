@@ -71,11 +71,11 @@ function BuyerViewContent() {
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-gray-100 rounded-lg px-3 py-2">
             <p className="text-[10px] text-gray-500">BUYER</p>
-            <p className="text-xs font-medium truncate">{invoice.buyer_name || buyerName || 'N/A'}</p>
+            <p className="text-[10px] font-medium truncate">{invoice.buyer_name || buyerName || 'N/A'}</p>
           </div>
           <div className="bg-blue-50 rounded-lg px-3 py-2">
             <p className="text-[10px] text-blue-600">SELLER</p>
-            <p className="text-xs font-medium truncate text-blue-800">{invoice.seller_name || 'N/A'}</p>
+            <p className="text-[10px] font-medium truncate text-blue-800">{invoice.seller_name || 'N/A'}</p>
           </div>
         </div>
 
