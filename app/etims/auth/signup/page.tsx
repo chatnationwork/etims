@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../_components/Layout';
 import { IDInput } from '../../../_components/KRAInputs';
 import { YearOfBirthInput } from '../../../_components/YearOfBirthInput';
-import { lookupById, registerTaxpayer } from '../../../actions/etims';
+import { lookupById, registerTaxpayer, checkUserStatus } from '../../../actions/etims';
 import { Loader2 } from 'lucide-react';
 
 function SignupContent() {
@@ -53,6 +53,21 @@ function SignupContent() {
     setError('');
     
     try {
+      // First check user status - don't register users with VAT
+      const statusResult = await checkUserStatus(phoneNumber);
+      
+      if (statusResult.success && statusResult.isRegistered) {
+        setError('This phone number is already registered. Please login instead.');
+        setLoading(false);
+        return;
+      }
+      
+      if (statusResult.success && statusResult.hasVat) {
+        setError('VAT-registered businesses cannot register. Please contact KRA for assistance.');
+        setLoading(false);
+        return;
+      }
+      
       // Call the registration API
       const result = await registerTaxpayer(idNumber, phoneNumber);
       
