@@ -399,10 +399,18 @@ export async function searchCreditNoteInvoice(
     }
     
     // Code 15 = Credit Note already issued for this invoice
+    // The invoice exists, just has a credit note already - return success with flag
     if (errorCode === 15) {
       return {
-        success: false,
-        error: 'A credit note has already been fully issued for this invoice. No further credit notes can be created.'
+        success: true,
+        hasCreditNote: true,
+        invoice: {
+          invoice_no: invoiceNo.trim(),
+          total_amount: 0, // We don't have the details but the invoice exists
+          currency: 'KES',
+          items: []
+        },
+        error: 'A credit note was previously issued for this invoice.'
       };
     }
     

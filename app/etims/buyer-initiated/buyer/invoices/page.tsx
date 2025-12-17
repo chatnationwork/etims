@@ -94,7 +94,7 @@ function BuyerInvoicesContent() {
       });
       
       if (result.success) {
-        alert('Invoice PDF sent to your WhatsApp!');
+        alert(`Invoice ${invoice.reference || invoice.invoice_id} sent to WhatsApp`);
       } else {
         alert('Failed to send: ' + (result.error || 'Unknown error'));
       }
@@ -158,7 +158,7 @@ function BuyerInvoicesContent() {
                                 onClick={(e) => handleDownloadInvoice(invoice, e)}
                                 disabled={sendingPdf === invoiceId}
                                 className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-blue-600 disabled:opacity-50"
-                                title="Send to WhatsApp"
+                                title="Download Invoice"
                               >
                                 {sendingPdf === invoiceId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                               </button>

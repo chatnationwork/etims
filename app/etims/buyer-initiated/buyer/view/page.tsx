@@ -141,7 +141,7 @@ function BuyerViewContent() {
                 filename: `Invoice_${invoice.reference || invoice.invoice_id || 'document'}.pdf`
               });
               if (result.success) {
-                alert('Invoice PDF sent to your WhatsApp!');
+                alert(`Invoice ${invoice.reference || invoice.invoice_id} sent to WhatsApp`);
               } else {
                 alert('Failed to send: ' + (result.error || 'Unknown error'));
               }

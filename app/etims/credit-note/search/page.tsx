@@ -39,9 +39,30 @@ function CreditNoteSearchContent() {
       if (!session?.msisdn) { setError('Session not found'); setLoading(false); return; }
 
       const result = await searchCreditNoteInvoice(session.msisdn, invoiceNumber.trim());
+      
+      // Handle case where invoice exists but has existing credit note
+      if (result.success && result.hasCreditNote) {
+        // Block partial credit notes if any credit note already exists
+        if (creditNoteType === 'partial') {
+          setError('A credit note was already issued for this invoice. You can only create a Full credit note.');
+          setLoading(false);
+          return;
+        }
+        // For full credit notes, proceed with minimal invoice data
+        const invoice: Invoice = {
+          id: invoiceNumber,
+          invoiceNumber: result.invoice?.invoice_no || invoiceNumber,
+          items: [], // No items available, will use invoice number only
+          subtotal: 0, tax: 0, total: 0, 
+          date: new Date().toISOString()
+        };
+        saveCreditNote({ invoice, msisdn: session.msisdn, type: 'full', reason });
+        router.push('/etims/credit-note/full');
+        return;
+      }
+      
       if (result.success && result.invoice) {
         // Business rule: Cannot create another partial credit note if one already exists
-        // But full credit notes are still allowed
         if (creditNoteType === 'partial' && result.hasPartialCreditNote) {
           setError('This invoice already has a partial credit note. Please select "Full" credit note type instead.');
           setLoading(false);

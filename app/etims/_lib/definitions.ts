@@ -122,6 +122,7 @@ export interface SearchCreditNoteResult {
   success: boolean;
   invoice?: CreditNoteInvoice;
   hasPartialCreditNote?: boolean;
+  hasCreditNote?: boolean; // True when any credit note exists for this invoice
   error?: string;
 }
 
