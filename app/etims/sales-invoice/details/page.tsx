@@ -201,7 +201,7 @@ export default function SalesInvoiceDetails() {
                 label="Quantity"
                 value={quantity}
                 onChange={setQuantity}
-                placeholder="1"
+                placeholder="0"
                 type="number"
                 step="0.01"
                 min="0.01"

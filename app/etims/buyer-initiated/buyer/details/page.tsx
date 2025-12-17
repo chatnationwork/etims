@@ -136,7 +136,7 @@ export default function BuyerInitiatedDetails() {
               </div>
               <div>
                 <label className="block text-[10px] text-gray-500 mb-1">Quantity <span className="text-red-500">*</span></label>
-                <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="1" min="0.01" step="0.01"
+                <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="0" min="0.01" step="0.01"
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
               </div>
             </div>
