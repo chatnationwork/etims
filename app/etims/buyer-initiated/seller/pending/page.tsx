@@ -39,20 +39,23 @@ function SellerPendingContent() {
       fetchInvoicesData(session.msisdn, session.name);
     }
     setInitializing(false);
-  }, []);
+  }, [statusFilter]); // Re-fetch when status changes
 
   const fetchInvoicesData = async (phone: string, name?: string) => {
     if (!phone.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const result = await fetchInvoices(phone, name || userName);
+      // Map status for API: 'pending' -> 'awaiting_approval', 'approved' -> 'accepted'
+      let apiStatus: 'pending' | 'rejected' | 'accepted' | 'awaiting_approval' = 'awaiting_approval';
+      if (statusFilter === 'approved') apiStatus = 'accepted';
+      else if (statusFilter === 'rejected') apiStatus = 'rejected';
+      else if (statusFilter === 'pending') apiStatus = 'awaiting_approval';
+      
+      // Pass actor='supplier' to get invoices where user is the seller
+      const result = await fetchInvoices(phone, name || userName, apiStatus, 'supplier');
       if (result.success && result.invoices) {
-        let filtered = result.invoices;
-        if (statusFilter === 'approved') filtered = result.invoices.filter(inv => inv.status === 'approved' || inv.status === 'accepted');
-        else if (statusFilter === 'rejected') filtered = result.invoices.filter(inv => inv.status === 'rejected');
-        else filtered = result.invoices.filter(inv => !inv.status || inv.status === 'pending');
-        setInvoices(filtered);
+        setInvoices(result.invoices);
       } else {
         setError(result.error || 'No invoices found');
         if (result.success) setInvoices([]);

@@ -45,9 +45,14 @@ function BuyerInvoicesContent() {
     setLoading(true);
     setError('');
     try {
-      // Map 'approved' to 'accepted' for API compatibility
-      const apiStatus = statusFilter === 'approved' ? 'accepted' : statusFilter as 'pending' | 'rejected' | 'accepted';
-      const result = await fetchInvoices(phone, name || userName, apiStatus);
+      // Map status for API: 'pending' -> 'awaiting_approval', 'approved' -> 'accepted'
+      let apiStatus: 'pending' | 'rejected' | 'accepted' | 'awaiting_approval' = 'awaiting_approval';
+      if (statusFilter === 'approved') apiStatus = 'accepted';
+      else if (statusFilter === 'rejected') apiStatus = 'rejected';
+      else if (statusFilter === 'pending') apiStatus = 'awaiting_approval';
+      
+      // Pass actor='buyer' to get invoices where user is the buyer
+      const result = await fetchInvoices(phone, name || userName, apiStatus, 'buyer');
       if (result.success && result.invoices) {
         setInvoices(result.invoices);
       } else {

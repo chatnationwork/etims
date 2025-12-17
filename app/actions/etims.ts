@@ -197,9 +197,15 @@ export async function submitInvoice(
 
 /**
  * Fetch buyer-initiated invoices by phone number
- * @param status - Optional filter: 'pending' | 'rejected' | 'accepted'
+ * @param status - Optional filter: 'pending' | 'rejected' | 'accepted' | 'awaiting_approval'
+ * @param actor - Optional filter: 'buyer' | 'supplier' (filters by user's role)
  */
-export async function fetchInvoices(phoneNumber: string, buyerName?: string, status?: 'pending' | 'rejected' | 'accepted'): Promise<FetchInvoicesResult> {
+export async function fetchInvoices(
+  phoneNumber: string, 
+  buyerName?: string, 
+  status?: 'pending' | 'rejected' | 'accepted' | 'awaiting_approval',
+  actor?: 'buyer' | 'supplier'
+): Promise<FetchInvoicesResult> {
   if (!phoneNumber || phoneNumber.trim() === '') {
     return { success: false, invoices: [], error: 'Phone number is required' };
   }
@@ -214,14 +220,18 @@ export async function fetchInvoices(phoneNumber: string, buyerName?: string, sta
     cleanNumber = '254' + cleanNumber;
   }
 
-  console.log('Fetching invoices for:', cleanNumber, 'with status:', status || 'all');
+  console.log('Fetching invoices for:', cleanNumber, 'status:', status || 'all', 'actor:', actor || 'all');
 
   try {
-    // Build URL with optional status query param
-    let url = `${BASE_URL}/buyer-initiated/fetch/${cleanNumber}`;
-    if (status) {
-      url += `?status=${status}`;
-    }
+    // Build URL with query params
+    const params = new URLSearchParams();
+    params.append('page', '1');
+    params.append('page_size', '50');
+    params.append('source', 'whatsapp');
+    if (status) params.append('status', status);
+    if (actor) params.append('actor', actor);
+
+    const url = `${BASE_URL}/buyer-initiated/fetch/${cleanNumber}?${params.toString()}`;
 
     const response = await axios.get(
       url,
@@ -240,10 +250,16 @@ export async function fetchInvoices(phoneNumber: string, buyerName?: string, sta
     let invoices: any[] = [];
     if (Array.isArray(response.data)) {
       invoices = response.data;
-    } else if (response.data.invoices) {
+    } else if (response.data.invoices?.entries) {
+      // New paginated format: { invoices: { entries: [...], total_entries: N } }
+      invoices = response.data.invoices.entries;
+    } else if (response.data.invoices && Array.isArray(response.data.invoices)) {
       invoices = response.data.invoices;
     } else if (response.data.data) {
       invoices = response.data.data;
+    } else if (response.data.code === 20) {
+      // Code 20 = "Invoices Found" but may have empty entries
+      return { success: true, invoices: [] };
     } else if (response.data.success !== false) {
       return { success: true, invoices: [] };
     } else {
