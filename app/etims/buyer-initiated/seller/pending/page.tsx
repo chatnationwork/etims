@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../../_components/Layout';
-import { fetchInvoices, processBuyerInvoiceBulk } from '../../../../actions/etims';
+import { fetchInvoices, processBuyerInvoiceBulk, sendWhatsAppDocument } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
 import { Download, Eye, Loader2, Phone, FileText, Square, CheckSquare } from 'lucide-react';
 import { getUserSession } from '../../../_lib/store';
@@ -21,6 +21,7 @@ function SellerPendingContent() {
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState('');
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [sendingPdf, setSendingPdf] = useState<string | null>(null);
 
   const getPageTitle = () => {
     switch (statusFilter) {
@@ -74,12 +75,33 @@ function SellerPendingContent() {
     router.push(`/etims/buyer-initiated/seller/view?id=${invoiceId}&phone=${encodeURIComponent(phoneNumber)}&status=${statusFilter}`);
   };
 
-  const handleDownloadInvoice = (invoice: FetchedInvoice, e: React.MouseEvent) => {
+  const handleDownloadInvoice = async (invoice: FetchedInvoice, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (invoice.invoice_pdf_url) {
-      window.open(invoice.invoice_pdf_url, '_blank');
-    } else {
+    if (!invoice.invoice_pdf_url) {
       alert('Download URL not available for this invoice.');
+      return;
+    }
+
+    const startId = invoice.uuid || invoice.invoice_number || invoice.invoice_id || invoice.reference || '';
+    setSendingPdf(startId);
+
+    try {
+      const result = await sendWhatsAppDocument({
+        recipientPhone: phoneNumber,
+        documentUrl: invoice.invoice_pdf_url,
+        caption: `Invoice ${invoice.invoice_number || invoice.reference || invoice.invoice_id}\nAmount: KES ${(invoice.total_amount || 0).toLocaleString()}\nBuyer: ${invoice.buyer_name || 'N/A'}`,
+        filename: `Invoice_${invoice.invoice_number || invoice.reference || invoice.invoice_id || 'document'}.pdf`
+      });
+
+      if (result.success) {
+        alert(`Invoice sent to WhatsApp (${phoneNumber})`);
+      } else {
+        alert('Failed to send: ' + (result.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Error sending invoice: ' + err.message);
+    } finally {
+      setSendingPdf(null);
     }
   };
 
@@ -200,7 +222,7 @@ function SellerPendingContent() {
                         )}
                         <th className="text-left py-1.5 px-1 font-medium text-gray-600">Invoice</th>
                         <th className="text-right py-1.5 px-1 font-medium text-gray-600">Amount</th>
-                        <th className="text-center py-1.5 px-1 font-medium text-gray-600">Actions</th>
+                        <th className="text-center py-1.5 px-1 font-medium text-gray-600">{statusFilter === 'rejected' ? 'View' : 'Actions'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -221,13 +243,16 @@ function SellerPendingContent() {
                             <td className="py-2 px-1 text-right font-medium">{(invoice.total_amount || 0).toLocaleString()}</td>
                             <td className="py-2 px-1">
                               <div className="flex items-center justify-center gap-1">
-                                <button 
-                                  onClick={(e) => handleDownloadInvoice(invoice, e)}
-                                  className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-blue-600"
-                                  title="Download"
-                                >
-                                  <Download className="w-3.5 h-3.5" />
-                                </button>
+                                  {statusFilter !== 'rejected' && (
+                                  <button 
+                                    onClick={(e) => handleDownloadInvoice(invoice, e)}
+                                    disabled={sendingPdf === invoiceId}
+                                    className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-blue-600 disabled:opacity-50"
+                                    title="Send to WhatsApp"
+                                  >
+                                    {sendingPdf === invoiceId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                                  </button>
+                                  )}
                                 <button 
                                   onClick={() => handleViewInvoice(invoice)}
                                   className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"

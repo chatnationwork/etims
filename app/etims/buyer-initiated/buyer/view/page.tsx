@@ -7,6 +7,7 @@ import { fetchInvoices, sendWhatsAppDocument } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
 import { getUserSession } from '../../../_lib/store';
 import { Loader2, Download, ArrowLeft } from 'lucide-react';
+import { QuickMenu } from '@/app/etims/_components/QuickMenu';
 
 function BuyerViewContent() {
   const router = useRouter();
@@ -32,7 +33,7 @@ function BuyerViewContent() {
     if (!id || !phone) { setIsLoading(false); setError('Missing data'); return; }
     const loadInvoice = async () => {
       try {
-        const result = await fetchInvoices(phone, session?.name);
+        const result = await fetchInvoices(phone, session?.name, undefined, 'buyer');
         if (result.success && result.invoices) {
           // Match against uuid, invoice_number, or legacy fields
           const found = result.invoices.find(inv => 
@@ -161,6 +162,11 @@ function BuyerViewContent() {
         <button onClick={() => router.push(backUrl)} className="w-full text-center text-[var(--kra-red)] text-xs font-medium py-2 flex items-center justify-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" />Back to Invoices
         </button>
+        {/* Quick Menu */}
+        <div className="pt-2">
+          <p className="text-xs text-gray-500 mb-2 text-center">Quick Actions</p>
+          <QuickMenu />
+        </div>
       </div>
     </Layout>
   );

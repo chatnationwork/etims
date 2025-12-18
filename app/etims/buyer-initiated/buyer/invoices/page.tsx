@@ -82,7 +82,7 @@ function BuyerInvoicesContent() {
       return;
     }
     
-    const invoiceId = invoice.invoice_id || invoice.reference || '';
+    const invoiceId = invoice.uuid || invoice.invoice_number || invoice.invoice_id || invoice.reference || '';
     setSendingPdf(invoiceId);
     
     try {
@@ -139,21 +139,22 @@ function BuyerInvoicesContent() {
                     <tr className="border-b">
                       <th className="text-left py-1.5 px-1 font-medium text-gray-600">Invoice</th>
                       <th className="text-right py-1.5 px-1 font-medium text-gray-600">Amount</th>
-                      <th className="text-center py-1.5 px-1 font-medium text-gray-600">Actions</th>
+                      <th className="text-center py-1.5 px-1 font-medium text-gray-600">{statusFilter === 'rejected' ? 'View' : 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoices.map((invoice, idx) => {
-                      const invoiceId = invoice.invoice_id || invoice.reference || String(idx);
+                      const invoiceId = invoice.uuid || invoice.invoice_number || invoice.invoice_id || invoice.reference || String(idx);
                       return (
                         <tr key={invoiceId} className="border-b last:border-0 hover:bg-gray-50">
                           <td className="py-2 px-1">
-                            <span className="font-medium text-gray-800">{invoice.reference || invoice.invoice_id || 'N/A'}</span>
+                            <span className="font-medium text-gray-800">{invoice.invoice_number || invoice.reference || 'N/A'}</span>
                             <span className="block text-[10px] text-gray-400">{invoice.seller_name || 'Unknown Seller'}</span>
                           </td>
                           <td className="py-2 px-1 text-right font-medium">{(invoice.total_amount || 0).toLocaleString()}</td>
                           <td className="py-2 px-1">
                             <div className="flex items-center justify-center gap-1">
+                              {statusFilter !== 'rejected' && (
                               <button 
                                 onClick={(e) => handleDownloadInvoice(invoice, e)}
                                 disabled={sendingPdf === invoiceId}
@@ -162,6 +163,7 @@ function BuyerInvoicesContent() {
                               >
                                 {sendingPdf === invoiceId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                               </button>
+                              )}
                               <button 
                                 onClick={() => handleViewInvoice(invoice)}
                                 className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"

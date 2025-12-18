@@ -7,6 +7,7 @@ import { fetchInvoices, processBuyerInvoice } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
 import { getUserSession } from '../../../_lib/store';
 import { Loader2, Download, ArrowLeft, Store } from 'lucide-react';
+import { QuickMenu } from '@/app/etims/_components/QuickMenu';
 
 function SellerViewContent() {
   const router = useRouter();
@@ -174,6 +175,11 @@ function SellerViewContent() {
         <button onClick={() => router.push(backUrl)} className="w-full text-center text-[var(--kra-red)] text-xs font-medium py-2 flex items-center justify-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" />Back to Invoices
         </button>
+        {/* Quick Menu */}
+        <div className="pt-2">
+          <p className="text-xs text-gray-500 mb-2 text-center">Quick Actions</p>
+          <QuickMenu />
+        </div>
       </div>
     </Layout>
   );

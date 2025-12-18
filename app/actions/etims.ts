@@ -490,7 +490,7 @@ export async function submitCreditNote(
     } else {
       endpoint = `${BASE_URL}/submit/partial-credit-note`;
       // Partial credit note expects etims_invoice_no and source
-      payload.etims_invoice_no = request.invoice_no;
+      payload.etims_invoice_no ="43"
       payload.items = request.items;
       payload.source = 'whatsapp';
       // No full flag needed for partial

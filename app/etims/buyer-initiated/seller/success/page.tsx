@@ -52,11 +52,11 @@ function BuyerSuccessContent() {
           <Button variant="secondary" onClick={handleGoHome}>
             Go to Buyer Initiated Menu
           </Button>
-            {/* Quick Menu */}
-                    <div className="pt-2">
-                      <p className="text-xs text-gray-500 mb-2 text-center">Quick Actions</p>
-                      <QuickMenu />
-                    </div>
+          {/* Quick Menu */}
+          <div className="pt-2">
+            <p className="text-xs text-gray-500 mb-2 text-center">Quick Actions</p>
+            <QuickMenu />
+          </div>
         </div>
       </div>
     </Layout>
