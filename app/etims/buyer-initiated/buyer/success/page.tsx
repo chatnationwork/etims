@@ -16,7 +16,7 @@ export default function BuyerInitiatedSellerSuccess() {
 
   const handleCreateAnother = () => {
     clearBuyerInitiated();
-    router.push('/etims/buyer-initiated/seller/create');
+    router.push('/etims/buyer-initiated/buyer/create');
   };
 
   return (
