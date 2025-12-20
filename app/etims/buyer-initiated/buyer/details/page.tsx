@@ -35,6 +35,7 @@ export default function BuyerInitiatedDetails() {
 
   const handleAddItem = () => {
     if (!itemName.trim()) { alert('Item name required'); return; }
+    if (!description.trim()) { alert('Description required'); return; }
     const price = parseFloat(unitPrice);
     if (isNaN(price) || price <= 0) { alert('Valid price required'); return; }
     const qty = parseFloat(quantity);
