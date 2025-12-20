@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Layout, Card, Button } from '../../../_components/Layout';
+import { Layout, Card } from '../../../_components/Layout';
 import { submitBuyerInitiatedInvoice, sendWhatsAppDocument } from '../../../../actions/etims';
-import { getBuyerInitiated, BuyerInitiatedInvoice, calculateTotals, getUserSession } from '../../../_lib/store';
-import { Loader2, Edit2, Send, Store } from 'lucide-react';
+import { saveBuyerInitiated, getBuyerInitiated, BuyerInitiatedInvoice, calculateTotals, getUserSession } from '../../../_lib/store';
+import { Loader2, Edit2, Send, Store, Check, X } from 'lucide-react';
 
 export default function BuyerInitiatedReview() {
   const router = useRouter();
@@ -13,6 +13,8 @@ export default function BuyerInitiatedReview() {
   const [isSending, setIsSending] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState('');
+  const [isEditingSeller, setIsEditingSeller] = useState(false);
+  const [editSellerName, setEditSellerName] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -22,7 +24,16 @@ export default function BuyerInitiatedReview() {
       return;
     }
     setInvoice(saved);
+    setEditSellerName(saved.sellerName || '');
   }, [router]);
+
+  const handleSaveSellerName = () => {
+    if (!editSellerName.trim() || !invoice) return;
+    const updated = { ...invoice, sellerName: editSellerName.trim() };
+    setInvoice(updated);
+    saveBuyerInitiated({ sellerName: editSellerName.trim() });
+    setIsEditingSeller(false);
+  };
 
   const handleSubmit = async () => {
     setIsSending(true);
@@ -30,7 +41,11 @@ export default function BuyerInitiatedReview() {
     try {
       const session = getUserSession();
       if (!session?.msisdn) { setError('Session not found'); setIsSending(false); return; }
-      if (!invoice || !invoice.items || !invoice.sellerPin) { setError('Invalid data'); setIsSending(false); return; }
+      if (!invoice) { setError('Invoice not found'); setIsSending(false); return; }
+      if (!invoice.items) { setError('Items not found'); setIsSending(false); return; }
+      if (!invoice.sellerPin) { setError('Seller pin not found'); setIsSending(false); return; }
+      if (!invoice.sellerName) { setError('Seller name not found'); setIsSending(false); return; }
+      if (!invoice.buyerName) { setError('Buyer name not found'); setIsSending(false); return; }
 
       const totals = calculateTotals(invoice.items);
       const result = await submitBuyerInitiatedInvoice({
@@ -38,6 +53,7 @@ export default function BuyerInitiatedReview() {
         seller_pin: invoice.sellerPin,
         seller_msisdn: invoice.sellerPhone || '',
         total_amount: totals.total,
+        seller_name: invoice.sellerName,
         items: invoice.items.map(item => ({ item_name: item.name, taxable_amount: item.unitPrice, quantity: item.quantity }))
       });
 
@@ -82,12 +98,39 @@ export default function BuyerInitiatedReview() {
         </div>
 
         {/* Seller */}
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-          <Store className="w-4 h-4 text-gray-500" />
-          <div>
-            <p className="text-[10px] text-gray-500">SELLER</p>
-            <p className="text-sm font-medium text-gray-800">{invoice.sellerName}</p>
+        {/* Seller */}
+        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Store className="w-4 h-4 text-gray-500" />
+            <div>
+              <p className="text-[10px] text-gray-500">SELLER</p>
+              {isEditingSeller ? (
+                <input 
+                  autoFocus
+                  className="text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded px-1.5 py-0.5 mt-0.5 outline-none focus:ring-1 focus:ring-blue-500"
+                  value={editSellerName}
+                  onChange={(e) => setEditSellerName(e.target.value)}
+                />
+              ) : (
+                <p className="text-sm font-medium text-gray-800">{invoice.sellerName}</p>
+              )}
+            </div>
           </div>
+          
+          {isEditingSeller ? (
+            <div className="flex items-center gap-1">
+              <button onClick={handleSaveSellerName} className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                <Check className="w-4 h-4" />
+              </button>
+              <button onClick={() => { setIsEditingSeller(false); setEditSellerName(invoice.sellerName || ''); }} className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setIsEditingSeller(true)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
+              <Edit2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Items Table */}

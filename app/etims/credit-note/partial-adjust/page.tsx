@@ -60,7 +60,14 @@ export default function CreditNotePartialAdjust() {
   };
 
   const handleSubmit = () => {
-    saveCreditNote({ items: items.map(i => ({ item: i.item, quantity: i.quantity })) });
+    saveCreditNote({ 
+      items: items.map(i => ({ 
+        item: i.item, 
+        quantity: i.quantity,
+        item_name: i.item.name,
+        total_amount: (i.item.unitPrice * i.quantity).toFixed(2)
+      })) 
+    });
     router.push('/etims/credit-note/review');
   };
 

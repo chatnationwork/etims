@@ -41,8 +41,8 @@ export default function CreditNoteReview() {
       // Prepare items
       const isFull = creditNote.type === 'full';
       const items = isFull 
-        ? creditNote.invoice.items.map(item => ({ item_id: item.id, return_quantity: item.quantity }))
-        : (creditNote.items || []).map(item => ({ item_id: item.item.id, return_quantity: item.quantity }));
+        ? creditNote.invoice.items.map(item => ({ item_id: item.id, quantity: item.quantity, taxable_amount: parseFloat(item.total_amount || '0'), item_name: item.item_name }))
+        : (creditNote.items || []).map(item => ({ item_id: item.item.id, quantity: item.quantity, taxable_amount: parseFloat(item.total_amount || '0'), item_name: item.item_name }));
 
       const result = await submitCreditNote({
          msisdn: creditNote.msisdn,

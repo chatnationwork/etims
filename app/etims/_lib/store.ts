@@ -12,6 +12,8 @@ export interface InvoiceItem {
   description?: string;
   unitPrice: number;
   quantity: number;
+  item_name?: string;
+  total_amount?: string;
 }
 
 export interface Invoice {
@@ -34,6 +36,8 @@ export interface CreditNoteData {
   items?: Array<{
     item: InvoiceItem;
     quantity: number;
+    total_amount: string;
+    item_name: string;
   }>;
 }
 

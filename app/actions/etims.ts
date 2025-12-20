@@ -451,14 +451,13 @@ export async function submitCreditNote(
     return { success: false, error: 'Please select at least one item' };
   }
 
-  if (request.credit_note_type === "partial"){
-
+  if (request.credit_note_type === "partial") {
      // Validate each item
-  for (const item of request.items) {
-    if (item.return_quantity <= 0) {
-      return { success: false, error: 'Return quantity must be greater than 0' };
-    }
-  }
+     for (const item of request.items) {
+       if (item.quantity <= 0) {
+         return { success: false, error: 'Return quantity must be greater than 0' };
+       }
+     }
   }
  
 
@@ -476,24 +475,36 @@ export async function submitCreditNote(
   }, null, 2));
 
   try {
+    
+    
+
     let endpoint = '';
     let payload: any = {
       msisdn: cleanNumber,
       reason: request.reason
     };
+    // Extract the integer suffix from the invoice number (e.g., "KRASRN000025764/48" -> 48)
+    const invoiceSuffix = parseInt(request.invoice_no.split('/').pop() || '0', 10);
+
+    payload.invoice_no = invoiceSuffix;
+    
 
     if (request.credit_note_type === 'full') {
       endpoint = `${BASE_URL}/submit/credit-note`;
-      payload.invoice_no = request.invoice_no;
+      
       payload.full = true;
       // No items needed for full credit note
     } else {
       endpoint = `${BASE_URL}/submit/partial-credit-note`;
-      // Partial credit note expects etims_invoice_no and source
-      payload.etims_invoice_no = request.invoice_no;
-      payload.items = request.items;
+      
+      // Map items to expected structure
+      payload.items = request.items.map(item => ({
+        ...item,
+        id: item.item_id,
+        item_price: item.taxable_amount && item.quantity > 0 ? item.taxable_amount / item.quantity : 0 
+      }));
+      
       payload.source = 'whatsapp';
-      // No full flag needed for partial
     }
 
     console.log(`Submitting ${request.credit_note_type} credit note to:`, endpoint);
@@ -644,7 +655,8 @@ export async function submitBuyerInitiatedInvoice(
         seller_pin: request.seller_pin,
         seller_msisdn: cleanSellerNumber || undefined,
         total_amount: request.total_amount,
-        items: request.items
+        items: request.items,
+        supplier_name:request.seller_name
       },
       {
         headers: {

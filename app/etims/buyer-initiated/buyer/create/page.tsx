@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout, Card, Button } from '../../../_components/Layout';
 import { saveBuyerInitiated } from '../../../_lib/store';
-import { CheckCircle, Building2, User, Loader2 } from 'lucide-react';
+import { CheckCircle, Building2, User, Loader2, ArrowLeft } from 'lucide-react';
 import { lookupCustomer } from '../../../../actions/etims';
 import { PINOrIDInput } from '../../../../_components/KRAInputs';
 
@@ -92,6 +92,10 @@ export default function BuyerInitiatedCreate() {
       onBack={() => router.push('/etims/buyer-initiated')}
     >
       <div className="space-y-3">
+        {/* Helper Back Button */}
+        <button onClick={() => router.push('/etims/buyer-initiated')} className="text-[var(--kra-red)] text-xs font-medium flex items-center gap-1 mb-2">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back
+        </button>
         {/* Header - KRA Dark */}
         <div className="bg-[var(--kra-black)] rounded-xl p-4 text-white">
           <h1 className="text-base font-semibold">

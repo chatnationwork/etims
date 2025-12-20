@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../_components/Layout';
 import { searchCreditNoteInvoice } from '../../../actions/etims';
 import { saveCreditNote, getUserSession, Invoice } from '../../_lib/store';
-import { FileText, Search, Loader2 } from 'lucide-react';
-import { QuickMenu } from '../../_components/QuickMenu';
+import { FileText, Search, Loader2, ArrowLeft } from 'lucide-react';
+
 
 function CreditNoteSearchContent() {
   const router = useRouter();
@@ -101,6 +101,10 @@ function CreditNoteSearchContent() {
   return (
     <Layout title="Credit Note" showHeader={false} onBack={() => router.push('/etims')}>
       <div className="space-y-3">
+        {/* Helper Back Button */}
+        <button onClick={() => router.push('/etims')} className="text-[var(--kra-red)] text-xs font-medium flex items-center gap-1 mb-2">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back
+        </button>
         {/* Header */}
         <div className="bg-[var(--kra-black)] rounded-xl p-4 text-white">
           <div className="flex items-center gap-2 mb-1">
@@ -151,11 +155,7 @@ function CreditNoteSearchContent() {
           {loading ? <><Loader2 className="w-4 h-4 animate-spin inline mr-1" />Searching...</> : 'Search Invoice'}
         </Button>
 
-        {/* Quick Menu */}
-        <div className="pt-2">
-          <p className="text-xs text-gray-500 mb-2 text-center">Quick Actions</p>
-          <QuickMenu />
-        </div>
+       
       </div>
     </Layout>
   );

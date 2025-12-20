@@ -134,7 +134,11 @@ export interface SubmitCreditNoteRequest {
   reason: CreditNoteReason;
   items: {
     item_id: string;
-    return_quantity: number;
+    id?: string; // Mapped from item_id for some endpoints
+    quantity: number;
+    taxable_amount?: number;
+    item_price?: number; // Calculated from taxable_amount/quantity
+    item_name?: string;
   }[];
 }
 
@@ -154,6 +158,7 @@ export interface SubmitBuyerInitiatedInvoiceRequest {
   seller_pin: string;
   seller_msisdn?: string;
   total_amount: number;
+  seller_name: string;
   items: {
     item_name: string;
     taxable_amount: number;
