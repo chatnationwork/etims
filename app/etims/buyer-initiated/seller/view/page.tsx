@@ -175,14 +175,17 @@ function SellerViewContent() {
                       }
                       setSendingPdf(true);
                       try {
+                        const isInvoice = invoice.status === 'accepted' || invoice.status === 'approved';
+                        const docType = isInvoice ? 'Invoice Order' : 'Purchase Order';
+
                         const result = await sendWhatsAppDocument({
                           recipientPhone: phone || '',
                           documentUrl: invoice.invoice_pdf_url,
-                          caption: `Invoice Order *${invoice.invoice_number || invoice.reference || invoice.invoice_id}*\nAmount: KES *${Number(invoice.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*\nSeller: *${invoice.seller_name || 'N/A'}*`,
-                          filename: `Invoice_${invoice.invoice_number || invoice.reference || invoice.invoice_id || 'document'}.pdf`
+                          caption: `${docType} *${invoice.invoice_number || invoice.reference || invoice.invoice_id}*\nAmount: KES *${Number(invoice.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*\nSeller: *${invoice.seller_name || 'N/A'}*`,
+                          filename: `${docType.replace(' ', '_')}_${invoice.invoice_number || invoice.reference || invoice.invoice_id || 'document'}.pdf`
                         });
                         if (result.success) {
-                          alert(`Invoice Order ${invoice.invoice_number || invoice.reference || invoice.invoice_id} sent to WhatsApp number ${phone}`);
+                          alert(`${docType} ${invoice.invoice_number || invoice.reference || invoice.invoice_id} sent to WhatsApp number ${phone}`);
                         } else {
                           alert('Failed to send: ' + (result.error || 'Unknown error'));
                         }
