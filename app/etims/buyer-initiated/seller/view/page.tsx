@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../../../_components/Layout';
-import { fetchInvoices, processBuyerInvoice, sendWhatsAppDocument } from '../../../../actions/etims';
+import { fetchInvoices, processBuyerInvoice, sendWhatsAppDocument, sendBuyerInvoiceAlert, sendWhatsAppMessage } from '../../../../actions/etims';
 import { FetchedInvoice } from '../../../_lib/definitions';
 import { getUserSession } from '../../../_lib/store';
 import { Loader2, Download, ArrowLeft, Store } from 'lucide-react';
@@ -62,6 +62,29 @@ function SellerViewContent() {
       const result = await processBuyerInvoice(phone, invoiceRef, selectedAction === 'approve' ? 'accept' : 'reject');
       
       if (result.success) {
+        // Send WhatsApp alert to buyer
+        if (invoice.buyer_msisdn) {
+          const statusText = selectedAction === 'approve' ? 'accepted' : 'rejected';
+          const sellerDisplayName = invoice.seller_name || sellerName || 'the Seller';
+          
+          await sendBuyerInvoiceAlert(
+            invoice.buyer_msisdn,
+            invoice.buyer_name || 'Customer',
+            statusText,
+            sellerDisplayName
+          );
+        }
+
+        // Send confirmation to seller
+        if (phone) {
+             const statusText = selectedAction === 'approve' ? 'accepted' : 'rejected';
+             const sellerDisplayName = invoice.seller_name || sellerName || 'Partner';
+             await sendWhatsAppMessage({
+                 recipientPhone: phone,
+                 message: `Dear ${sellerDisplayName}, you have successfully ${statusText} invoice ${invoiceRef} from ${invoice.buyer_name || 'Customer'}.`
+             });
+        }
+
         router.push(`/etims/buyer-initiated/seller/success?action=${selectedAction}&invoice=${invoiceRef}&buyer=${encodeURIComponent(invoice.buyer_name || 'Buyer')}`);
       } else {
         alert(`Failed: ${result.error || 'Unknown error'}`);
