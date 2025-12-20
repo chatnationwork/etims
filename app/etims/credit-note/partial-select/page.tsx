@@ -27,7 +27,12 @@ export default function CreditNotePartialSelect() {
 
   const handleContinue = () => {
     if (selectedItems.size === 0) { alert('Select at least one item'); return; }
-    const selectedItemsData = invoice?.items.filter(item => selectedItems.has(item.id)).map(item => ({ item, quantity: item.quantity })) || [];
+    const selectedItemsData = invoice?.items.filter(item => selectedItems.has(item.id)).map(item => ({ 
+      item, 
+      quantity: item.quantity,
+      item_name: item.name,
+      total_amount: (item.unitPrice * item.quantity).toFixed(2)
+    })) || [];
     saveCreditNote({ items: selectedItemsData });
     router.push('/etims/credit-note/partial-adjust');
   };
