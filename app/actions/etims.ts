@@ -628,21 +628,23 @@ export async function processBuyerInvoice(
                 
                 if (approvedInvoice.invoice_pdf_url) {
                   console.log('PDF URL found, sending WhatsApp...');
-                  await sendWhatsAppDocument({
-                    recipientPhone: cleanNumber,
-                    documentUrl: approvedInvoice.invoice_pdf_url,
-                    caption: `Dear *${approvedInvoice.seller_name || 'Customer'}*,\n\nInvoice *${approvedInvoice.invoice_number || invoiceRef}* Amount: ${approvedInvoice.total_amount} has been approved.\n\nAttached is the invoice PDF.`,
-                    filename: `Invoice_${approvedInvoice.invoice_number || invoiceRef}.pdf`
-                  });
+                  await sendBuyerStatusUpdateWithPdf(
+                    approvedInvoice.supplier_msisdn || cleanNumber,
+                    approvedInvoice.seller_name || sellerName || 'Partner',
+                    `Invoice ${approvedInvoice.invoice_number || invoiceRef}`,
+                    `approved`,
+                    approvedInvoice.invoice_pdf_url
+                  );
 
                   if (approvedInvoice.buyer_msisdn) {
                     console.log(`Sending PDF to buyer (${approvedInvoice.buyer_msisdn})...`);
-                    await sendWhatsAppDocument({
-                      recipientPhone: approvedInvoice.buyer_msisdn,
-                      documentUrl: approvedInvoice.invoice_pdf_url,
-                      caption: `Dear *${approvedInvoice.buyer_name || 'Customer'}*,\n\nYour invoice *${approvedInvoice.invoice_number || invoiceRef}* Amount: ${approvedInvoice.total_amount} has been approved by *${sellerName}* .\n\nAttached is the invoice PDF.`,
-                      filename: `Invoice_${approvedInvoice.invoice_number || invoiceRef}.pdf`
-                    });
+                    await sendBuyerStatusUpdateWithPdf(
+                      approvedInvoice.buyer_msisdn,
+                      approvedInvoice.buyer_name || 'Customer',
+                      `Your invoice ${approvedInvoice.invoice_number || invoiceRef}`,
+                      `approved`,
+                      approvedInvoice.invoice_pdf_url
+                    );
                   }
                   
                   break; // Found and sent
@@ -1273,6 +1275,138 @@ export async function sendBuyerInvoiceAlert(
     });
     return { success: true };
   } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send invoice PDF with status update using specific template
+ */
+export async function sendBuyerStatusUpdateWithPdf(
+  recipientPhone: string,
+  personName: string,
+  line1: string,
+  line2: string,
+  pdfUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  
+  if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
+
+  // Clean phone number
+  let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
+  if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
+  else if (cleanNumber.startsWith('+')) cleanNumber = cleanNumber.substring(1);
+
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  
+  if (!token || !phoneNumberId) {
+    console.error('WhatsApp credentials missing');
+    return { success: false, error: 'Configuration error' };
+  }
+
+  const url = `https://crm.chatnation.co.ke/api/meta/v21.0/${phoneNumberId}/messages`;
+
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: cleanNumber,
+    type: "template",
+    template: {
+      name: "buyer_alert_for_invoice_status_update",
+      language: { code: "en", policy: "deterministic" },
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "document",
+              document: {
+                link: pdfUrl,
+                filename: "invoice.pdf" // Optional but good practice
+              }
+            }
+          ]
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: personName || "Valued Customer" },
+            { type: "text", text: line1 },
+            { type: "text", text: line2 } // Combine lines to match template's 3 variable structure if needed, or pass 3 distinct lines. User logic suggests 3 vars.
+          ]
+        }
+      ]
+    }
+  };
+  
+  // Wait, user provided template has 3 BODY variables.
+  // My proposed usage:
+  // Var 1: Name
+  // Var 2: "Invoice X Amount Y" (line1 in my calling code, or line1+line2?)
+  // Var 3: "has been approved..." (line3)
+  
+  // My signature has line1, line2, line3.
+  // Let's map them directly to the 3 variables.
+  // Calling code passed:
+  // Seller: Name, "Invoice...", "Amount...", "has been approved" -> 3 vars + name = 4 vars?
+  // User template sample:
+  // { type: "text", text: "VARIABLE_TEXT" },
+  // { type: "text", text: "VARIABLE_TEXT" },
+  // { type: "text", text: "VARIABLE_TEXT" }
+  // That's 3 body variables.
+  // Plus header.
+
+  // So I should pass 3 variables to the body.
+  // Variable 1: personName
+  // Variable 2: line1
+  // Variable 3: line2
+  
+  // Checking calling code again:
+  // Seller: name, `Invoice ${...}`, `Amount: ${...}`, `has been approved`
+  // That is 4 arguments!
+  // I need to condense them to 3 variables.
+  // Or maybe the template accepts 4? User sample showed 3 body params.
+  
+  // Let's combine:
+  // Var 1: personName
+  // Var 2: line1 (Invoice details)
+  // Var 3: line2 + " " + line3 (Amount + status)
+  
+  // Adjusted payload construction:
+  // parameters: [
+  //   { type: "text", text: personName },
+  //   { type: "text", text: line1 },
+  //   { type: "text", text: `${line2} ${line3}` }
+  // ]
+
+  try {
+    const finalPayload = {
+      ...payload,
+      template: {
+        ...payload.template,
+        components: [
+          payload.template.components[0],
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: personName },
+              { type: "text", text: line1 },
+              { type: "text", text: line2 }
+            ]
+          }
+        ]
+      }
+    };
+
+    console.log('Sending WhatsApp Template:', JSON.stringify(finalPayload, null, 2));
+    await axios.post(url, finalPayload, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error('WhatsApp Template Error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }
