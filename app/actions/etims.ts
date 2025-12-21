@@ -498,11 +498,14 @@ export async function submitCreditNote(
       endpoint = `${BASE_URL}/submit/partial-credit-note`;
       
       // Map items to expected structure
-      payload.items = request.items.map(item => ({
-        ...item,
-        id: item.item_id,
-        item_price: item.taxable_amount && item.quantity > 0 ? item.taxable_amount / item.quantity : 0 
-      }));
+      payload.items = request.items.map(item => {
+        const { taxable_amount, ...otherProps } = item;
+        return {
+          ...otherProps,
+          id: item.item_id,
+          item_price: item.taxable_amount && item.quantity > 0 ? item.taxable_amount / item.quantity : 0 
+        };
+      });
       
       payload.source = 'whatsapp';
     }

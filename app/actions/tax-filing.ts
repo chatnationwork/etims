@@ -129,18 +129,6 @@ export async function lookupTaxpayerById(
       console.error('Buyer Lookup Fallback Error:', fallbackError.response?.data || fallbackError.message);
     }
     
-    // Return mock data for testing when both APIs fail
-    if (idNumber === '12345678') {
-      return {
-        success: true,
-        code: 3,
-        message: 'Valid ID Number (Mock)',
-        name: 'JOHN DOE',
-        pin: idNumber,
-        idNumber: idNumber,
-      };
-    }
-    
     return {
       success: false,
       code: primaryError.response?.status || 500,

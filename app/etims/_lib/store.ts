@@ -3,6 +3,7 @@
 export interface BuyerInfo {
   pin: string;
   name: string;
+  msisdn?: string;
 }
 
 export interface InvoiceItem {
