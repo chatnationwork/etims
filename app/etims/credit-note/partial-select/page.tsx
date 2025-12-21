@@ -76,9 +76,9 @@ export default function CreditNotePartialSelect() {
                       {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--kra-red)]" /> : <Square className="w-4 h-4 text-gray-400" />}
                     </td>
                     <td className="py-2 px-1 text-gray-800">{item.name}</td>
-                    <td className="py-2 px-1 text-right text-gray-600">{price.toLocaleString()}</td>
+                    <td className="py-2 px-1 text-right text-gray-600">{price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="py-2 px-1 text-center text-gray-600">{qty}</td>
-                    <td className="py-2 px-1 text-right font-medium">{(price * qty).toLocaleString()}</td>
+                    <td className="py-2 px-1 text-right font-medium">{(price * qty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 );
               })}
@@ -91,7 +91,7 @@ export default function CreditNotePartialSelect() {
           <div className="bg-[var(--kra-black)] rounded-lg px-3 py-2 flex justify-between items-center text-white text-sm">
             <span>{selectedItems.size} item(s) selected</span>
             <span className="font-bold">
-              KES {invoice.items.filter(i => selectedItems.has(i.id)).reduce((sum, i) => sum + (i.unitPrice || 0) * (i.quantity || 0), 0).toLocaleString()}
+              KES {invoice.items.filter(i => selectedItems.has(i.id)).reduce((sum, i) => sum + (i.unitPrice || 0) * (i.quantity || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         )}

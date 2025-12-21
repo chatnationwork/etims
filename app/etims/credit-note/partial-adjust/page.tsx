@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout, Card, Button } from '../../_components/Layout';
 import { getCreditNote, saveCreditNote, calculateTotals, InvoiceItem } from '../../_lib/store';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, AlertCircle } from 'lucide-react';
 
 export default function CreditNotePartialAdjust() {
   const router = useRouter();
@@ -49,7 +49,8 @@ export default function CreditNotePartialAdjust() {
       
       // Clamp and Round on blur
       val = Math.round(val * 100) / 100;
-      val = Math.max(0.01, Math.min(i.maxQty, val));
+      // Only enforce minimum, allow max to be exceeded to show error
+      val = Math.max(0.01, val);
 
       return {
         ...i,
@@ -74,6 +75,7 @@ export default function CreditNotePartialAdjust() {
   if (!mounted || items.length === 0) return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-sm">Loading...</div>;
 
   const totalCredit = items.reduce((sum, i) => sum + i.item.unitPrice * i.quantity, 0);
+  const hasErrors = items.some(i => i.quantity > i.maxQty);
 
   return (
     <Layout title="Edit Credit Note" showHeader={false} onBack={() => router.push('/etims/credit-note/partial-select')}>
@@ -82,6 +84,14 @@ export default function CreditNotePartialAdjust() {
         <div className="bg-[var(--kra-black)] rounded-xl p-4 text-white">
           <h1 className="text-base font-semibold">Edit Credit Note</h1>
           <p className="text-gray-400 text-xs">Adjust quantities for credit</p>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-2 items-start">
+          <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+          <p className="text-xs text-yellow-800">
+            Please ensure all quantities entered are less than the quantities on the original invoice.
+          </p>
         </div>
 
         {/* Items */}
@@ -115,9 +125,14 @@ export default function CreditNotePartialAdjust() {
                 min={0}
                 onChange={(e) => handleQtyChange(item.id, e.target.value)} 
                 onBlur={() => handleQtyBlur(item.id)}
-                className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--kra-red)] focus:border-transparent outline-none transition-all"
+                className={`w-full px-3 py-3 text-base border rounded-lg outline-none transition-all ${quantity > maxQty ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[var(--kra-red)] focus:border-transparent focus:ring-2'}`}
                 placeholder={`Max ${maxQty}`}
               />
+              {quantity > maxQty && (
+                <p className="text-red-500 text-xs mt-1 font-medium">
+                  Enter a quantity equal to or less than the original invoice quantity {maxQty}
+                </p>
+              )}
             </div>
           </Card>
         ))}
@@ -132,7 +147,8 @@ export default function CreditNotePartialAdjust() {
 
         <div className="space-y-2">
           <button onClick={handleSubmit}
-            className="w-full py-2.5 bg-[var(--kra-red)] text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+            disabled={hasErrors}
+            className={`w-full py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${hasErrors ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--kra-red)]'}`}>
             <Send className="w-4 h-4" />Submit Credit Note
           </button>
           <button onClick={() => router.push('/etims/credit-note/partial-select')} className="w-full py-2 text-gray-600 text-xs font-medium flex items-center justify-center gap-1">
