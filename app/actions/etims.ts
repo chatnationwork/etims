@@ -631,7 +631,7 @@ export async function processBuyerInvoice(
                   await sendBuyerStatusUpdateWithPdf(
                     approvedInvoice.supplier_msisdn || cleanNumber,
                     approvedInvoice.seller_name || sellerName || 'Partner',
-                    `Invoice ${approvedInvoice.invoice_number || invoiceRef}`,
+                    `${approvedInvoice.invoice_number || invoiceRef}`,
                     `approved`,
                     approvedInvoice.invoice_pdf_url
                   );
@@ -641,7 +641,7 @@ export async function processBuyerInvoice(
                     await sendBuyerStatusUpdateWithPdf(
                       approvedInvoice.buyer_msisdn,
                       approvedInvoice.buyer_name || 'Customer',
-                      `Your invoice ${approvedInvoice.invoice_number || invoiceRef}`,
+                      `${approvedInvoice.invoice_number || invoiceRef}`,
                       `approved`,
                       approvedInvoice.invoice_pdf_url
                     );
