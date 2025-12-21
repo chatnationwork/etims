@@ -132,25 +132,28 @@ function SellerPendingContent() {
     
     setLoading(true);
     try {
-      // Map selected IDs back to invoice numbers for the API
-      const invoiceRefs: string[] = [];
+      // Map selected IDs back to invoice details for the API
+      const invoiceDetails: { ref: string; buyerPhone: string; buyerName: string }[] = [];
       selectedInvoices.forEach(id => {
          const inv = invoices.find(i => (i.uuid || i.invoice_number || i.invoice_id || i.reference || String(invoices.indexOf(i))) === id);
          if (inv) {
-             // Prefer invoice_number, fallback to reference or id
-             invoiceRefs.push(inv.invoice_number || inv.reference || inv.invoice_id || '');
+             invoiceDetails.push({
+               ref: inv.invoice_number || inv.reference || inv.invoice_id || '',
+               buyerPhone: inv.buyer_msisdn || '',
+               buyerName: inv.buyer_name || 'Customer'
+             });
          }
       });
       
-      const validRefs = invoiceRefs.filter(ref => ref !== '');
+      const validDetails = invoiceDetails.filter(d => d.ref !== '');
 
-      if (validRefs.length === 0) {
+      if (validDetails.length === 0) {
           alert('Could not resolve invoice numbers for selected items.');
           setLoading(false);
           return;
       }
 
-      const result = await processBuyerInvoiceBulk(phoneNumber, validRefs, action);
+      const result = await processBuyerInvoiceBulk(phoneNumber, validDetails, action, userName || 'Seller');
       
       if (result.success) {
           // Success message

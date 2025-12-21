@@ -262,20 +262,42 @@ export default function SalesInvoiceDetails() {
                       </td>
                       <td className="text-right py-2">
                         <div className="flex justify-end gap-1">
-                          <button
-                            onClick={() => handleEditItem(item)}
-                            className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            aria-label="Edit item"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                            aria-label="Remove item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {deleteConfirmationId === item.id ? (
+                            <div className="flex items-center gap-2 bg-red-50 p-1 rounded-lg animate-in slide-in-from-right-5 duration-200">
+                              <span className="text-xs text-red-600 font-medium pl-1">Delete?</span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={confirmDelete}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 font-medium shadow-sm active:scale-95 transition-all"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmationId(null)}
+                                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-50 font-medium shadow-sm active:scale-95 transition-all"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditItem(item)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                aria-label="Edit item"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                aria-label="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -303,39 +325,6 @@ export default function SalesInvoiceDetails() {
           Continue
         </Button>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmationId && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden relative">
-            <div className="p-5 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">Delete Item?</h3>
-              <p className="text-gray-500 text-sm">
-                Are you sure you want to remove this item from the invoice? This action cannot be undone.
-              </p>
-            </div>
-            <div className="bg-gray-50 px-5 py-3 flex gap-3">
-              <Button 
-                variant="secondary" 
-                onClick={() => setDeleteConfirmationId(null)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="danger" 
-                onClick={confirmDelete}
-                className="flex-1"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }

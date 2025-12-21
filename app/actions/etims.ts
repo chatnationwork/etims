@@ -605,24 +605,48 @@ export async function processBuyerInvoice(
  */
 export async function processBuyerInvoiceBulk(
   msisdn: string,
-  invoiceRefs: string[],
-  action: 'accept' | 'reject'
+  invoices: { ref: string; buyerPhone: string; buyerName: string }[],
+  action: 'accept' | 'reject',
+  sellerName: string
 ): Promise<{ success: boolean; processed: number; failed: number; errors: string[] }> {
   if (!msisdn) return { success: false, processed: 0, failed: 0, errors: ['Phone number is required'] };
-  if (!invoiceRefs || invoiceRefs.length === 0) return { success: false, processed: 0, failed: 0, errors: ['No invoices selected'] };
+  if (!invoices || invoices.length === 0) return { success: false, processed: 0, failed: 0, errors: ['No invoices selected'] };
 
-  console.log(`Processing bulk invoices for ${msisdn}: ${action} (${invoiceRefs.length} items)`);
+  console.log(`Processing bulk invoices for ${msisdn}: ${action} (${invoices.length} items)`);
 
   const results = await Promise.all(
-    invoiceRefs.map(ref => processBuyerInvoice(msisdn, ref, action))
+    invoices.map(async (inv) => {
+      const result = await processBuyerInvoice(msisdn, inv.ref, action);
+      if (result.success) {
+        // Send alert to Buyer
+        if (inv.buyerPhone) {
+          await sendBuyerInvoiceAlert(
+            inv.buyerPhone,
+            inv.buyerName || 'Customer',
+            action === 'accept' ? 'accepted' : 'rejected',
+            sellerName || 'the Seller'
+          );
+        }
+      }
+      return result;
+    })
   );
 
   const processed = results.filter(r => r.success).length;
   const failed = results.filter(r => !r.success).length;
   const errors = results.filter(r => !r.success && r.error).map(r => r.error as string);
 
+  // Send summary notification to Seller
+  if (processed > 0) {
+    const statusText = action === 'accept' ? 'approved' : 'rejected';
+    await sendWhatsAppMessage({
+      recipientPhone: msisdn,
+      message: `Dear ${sellerName || 'Seller'}, you have successfully ${statusText} ${processed} invoice(s) in bulk.`
+    });
+  }
+
   return {
-    success: failed === 0, // Considered fully successful only if all succeed
+    success: failed === 0,
     processed,
     failed,
     errors
