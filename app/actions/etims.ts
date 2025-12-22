@@ -975,10 +975,10 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
       // Send WhatsApp notification
       await sendWhatsAppMessage({
         recipientPhone: cleanNumber,
-        message: "Dear Customer,Your registration is in progress. \n\nRegistration is only allowed for non-VAT registered taxpayers. For more information, visit https://www.kra.go.ke/business/etims-electronic-tax-invoice-management-system/learn-about-etims/what-is-etims"
+        message: "Dear Customer, your registration is currently in progress. Kindly try logging in again shortly.\n\n For more information, visit https://www.kra.go.ke/business/etims-electronic-tax-invoice-management-system/learn-about-etims/what-is-etims"
       });
       
-      return { success: false, error: 'Registration is in progress. Please try again later.' };
+      return { success: false, error: 'Registration is currently in progress. Kindly try logging in again shortly.' };
     } else {
       return { success: false, error: response.data.message || 'Registration failed' };
     }
