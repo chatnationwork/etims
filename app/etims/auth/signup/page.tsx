@@ -137,7 +137,7 @@ function SignupContent() {
         // Handle "In Progress" case - show error then redirect home
         if (errorMsg.toLowerCase().includes('in progress')) {
           setTimeout(() => {
-            router.push('/etims');
+            router.push('/etims/auth');
           }, 3000);
         }
       }
