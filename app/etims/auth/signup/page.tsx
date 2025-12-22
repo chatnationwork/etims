@@ -131,7 +131,15 @@ function SignupContent() {
         });
         router.push(`/etims/auth/signup/success?${params.toString()}`);
       } else {
-        setError(result.error || 'Registration failed. Please try again.');
+        const errorMsg = result.error || 'Registration failed. Please try again.';
+        setError(errorMsg);
+        
+        // Handle "In Progress" case - show error then redirect home
+        if (errorMsg.toLowerCase().includes('in progress')) {
+          setTimeout(() => {
+            router.push('/etims');
+          }, 3000);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
