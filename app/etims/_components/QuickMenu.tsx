@@ -5,7 +5,7 @@ import { FileText, FileMinus, UserCheck } from 'lucide-react';
 import { clearSalesInvoice, clearCreditNote, clearBuyerInitiated } from '../_lib/store';
 
 /**
- * Compact Quick Menu - Shows the 3 main eTIMS actions in a horizontal layout
+ * Shows the 3 main eTIMS actions in a horizontal layout
  * Used on success pages to quickly navigate to other actions
  */
 export function QuickMenu() {

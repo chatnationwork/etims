@@ -83,13 +83,7 @@ function AuthContent() {
 
           <Card>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Show the phone number */}
-              {/* {phoneNumber && (
-                <div className="bg-gray-100 rounded-lg px-3 py-2 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-800">{phoneNumber}</span>
-                </div>
-              )} */}
+              
 
               {error && (
                 <div className="p-2 bg-red-50 border border-red-200 rounded-lg">

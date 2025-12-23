@@ -38,12 +38,7 @@ export function Layout({ children, title, step, onBack, showMenu = false, showHe
       clearUserSession();
       sessionStorage.clear();
       
-      // Redirect with phone number preserved if available
-      // if (msisdn) {
-      //   router.push(`/etims/auth?number=${encodeURIComponent(msisdn)}`);
-      // } else {
-      //   router.push('/etims/auth');
-      // }
+     
       const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
       const message = encodeURIComponent('Connect to agent');
       // Open WhatsApp with pre-filled message

@@ -7,7 +7,6 @@ import {
   Calculator, 
   CreditCard, 
   Plane,
-  ChevronRight
 } from 'lucide-react';
 
 export default function LandingPage() {

@@ -27,9 +27,10 @@ const getAuthHeaders = async () => {
   };
 };
 
-// Helper to handle API errors - logs detailed error on server, returns friendly message string
+/**
+ * Logs detailed error on server, returns friendly message string
+ */
 const getApiErrorMessage = (error: any, context: string = 'API'): string => {
-  // Log detailed error for debugging (server-side only)
   console.error(`[${context}] API Error:`, {
     status: error.response?.status,
     data: error.response?.data,
@@ -618,14 +619,12 @@ export async function processBuyerInvoice(
             
             if (fetchResult.success && fetchResult.invoices) {
               console.log(`Fetched ${fetchResult.invoices.length} accepted invoices.`);
-              // Log some invoice refs for debugging
-              // console.log('Invoice refs found:', fetchResult.invoices.map(inv => inv.invoice_number || inv.reference || inv.invoice_id).join(', '));
-              
+            
               const approvedInvoice = fetchResult.invoices.find(inv => 
                 (inv.invoice_number === invoiceRef) || 
                 (inv.reference === invoiceRef) ||
                 (inv.invoice_id === invoiceRef) ||
-                (inv.total_amount && inv.buyer_name && `${inv.reference}`.includes(invoiceRef)) // Loose match if needed
+                (inv.total_amount && inv.buyer_name && `${inv.reference}`.includes(invoiceRef))
               );
 
               if (approvedInvoice) {
@@ -651,8 +650,8 @@ export async function processBuyerInvoice(
                       approvedInvoice.invoice_pdf_url
                     );
                   }
-                  
-                  break; // Found and sent
+                  // Found and sent
+                  break; 
                 } else {
                   console.log('Invoice found but PDF URL missing yet.');
                 }
@@ -795,7 +794,7 @@ export async function submitBuyerInitiatedInvoice(
   }
 }
 
-// ==================== AUTHENTICATION ACTIONS ====================
+// AUTHENTICATION ACTIONS 
 
 export interface CheckUserStatusResult {
   success: boolean;
@@ -864,11 +863,9 @@ export interface LookupByIdResult {
 }
 
 /**
- * Lookup user details by ID number (using PIN or ID lookup API)
+ * Lookup user details by ID number using lookup API
  */
-/**
- * Lookup user details by ID number (using 1automations API)
- */
+
 export async function lookupById(idNumber: string, phoneNumber: string, yearOfBirth: string): Promise<LookupByIdResult> {
   if (!idNumber || idNumber.trim().length < 6) {
     return { success: false, error: 'ID number must be at least 6 characters' };
@@ -972,7 +969,7 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
     if (response.data.code === 5) {
       return { success: true, message: response.data.message || 'Registration successful' };
     } else if (response.data.code === 22) {
-      // Send WhatsApp notification
+    
       await sendWhatsAppMessage({
         recipientPhone: cleanNumber,
         message: "Dear Customer, your registration is currently in progress. Kindly try logging in again shortly.\n\n For more information, visit https://www.kra.go.ke/business/etims-electronic-tax-invoice-management-system/learn-about-etims/what-is-etims"
@@ -1085,7 +1082,7 @@ export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPR
   }
 }
 
-// ==================== WHATSAPP TEXT MESSAGE SENDING ====================
+// WHATSAPP TEXT MESSAGE SENDING
 
 export interface SendWhatsAppMessageParams {
   recipientPhone: string; // The phone number to send to
@@ -1168,7 +1165,7 @@ export async function sendWhatsAppMessage(
   }
 }
 
-// ==================== WHATSAPP DOCUMENT SENDING ====================
+// WHATSAPP DOCUMENT SENDING
 
 export interface SendWhatsAppDocumentParams {
   recipientPhone: string; // The phone number to send to (current user's phone)
@@ -1367,52 +1364,13 @@ export async function sendBuyerStatusUpdateWithPdf(
           parameters: [
             { type: "text", text: personName || "Valued Customer" },
             { type: "text", text: line1 },
-            { type: "text", text: line2 } // Combine lines to match template's 3 variable structure if needed, or pass 3 distinct lines. User logic suggests 3 vars.
+            { type: "text", text: line2 } 
           ]
         }
       ]
     }
   };
-  
-  // Wait, user provided template has 3 BODY variables.
-  // My proposed usage:
-  // Var 1: Name
-  // Var 2: "Invoice X Amount Y" (line1 in my calling code, or line1+line2?)
-  // Var 3: "has been approved..." (line3)
-  
-  // My signature has line1, line2, line3.
-  // Let's map them directly to the 3 variables.
-  // Calling code passed:
-  // Seller: Name, "Invoice...", "Amount...", "has been approved" -> 3 vars + name = 4 vars?
-  // User template sample:
-  // { type: "text", text: "VARIABLE_TEXT" },
-  // { type: "text", text: "VARIABLE_TEXT" },
-  // { type: "text", text: "VARIABLE_TEXT" }
-  // That's 3 body variables.
-  // Plus header.
 
-  // So I should pass 3 variables to the body.
-  // Variable 1: personName
-  // Variable 2: line1
-  // Variable 3: line2
-  
-  // Checking calling code again:
-  // Seller: name, `Invoice ${...}`, `Amount: ${...}`, `has been approved`
-  // That is 4 arguments!
-  // I need to condense them to 3 variables.
-  // Or maybe the template accepts 4? User sample showed 3 body params.
-  
-  // Let's combine:
-  // Var 1: personName
-  // Var 2: line1 (Invoice details)
-  // Var 3: line2 + " " + line3 (Amount + status)
-  
-  // Adjusted payload construction:
-  // parameters: [
-  //   { type: "text", text: personName },
-  //   { type: "text", text: line1 },
-  //   { type: "text", text: `${line2} ${line3}` }
-  // ]
 
   try {
     const finalPayload = {
