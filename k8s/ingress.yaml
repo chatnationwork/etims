@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: etims-ingress
+  namespace: chatnation
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - whatsapp.kra.go.ke
+      secretName: whatsapp-kra-tls
+  rules:
+    - host: whatsapp.kra.go.ke
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: etims-service
+                port:
+                  number: 80
