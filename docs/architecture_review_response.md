@@ -1,6 +1,6 @@
 # Architecture Review Response
 
-**To:** Belinda / Architecture Review Team
+**To:** Architecture Review Team
 **Date:** January 14, 2026
 **Subject:** Response to Architecture Review Findings
 
@@ -19,14 +19,45 @@ The PesaFlow Identity Service and APIs are currently **Publicly Accessible** via
 - **Hosting Status:** Public Internet Facing
 - **Access Method:** HTTPS (Port 443)
 
-The architecture diagram has been updated (see below) to reflect that the "eCitizen/KRA Application" connects to these public endpoints. No internal private IPs are being used for this integration at this stage.
+### Updated Architecture Diagram
+
+```mermaid
+flowchart LR
+    subgraph External["Public Internet"]
+        User["User on<br/>WhatsApp"]
+    end
+
+    subgraph KRA["KRA Kubernetes Cluster"]
+        ING["Ingress"]
+        SVC["Service"]
+        PODS["Application Pods<br/>(Next.js x2)"]
+    end
+
+    API["PesaFlow API<br/>kratest.pesaflow.com"]
+    COOKIE[("Browser Cookie<br/>(auth token)")]
+
+    User -->|"HTTPS"| ING
+    ING --> SVC
+    SVC --> PODS
+    PODS <-->|"Read/Write"| COOKIE
+    PODS -->|"Bearer Token"| API
+```
+
+### How It Works:
+1. **User** opens link in WhatsApp WebView
+2. **Request** goes to Ingress → Service → Pod
+3. **Pod** (Next.js Server Action) reads auth token from the **HTTP-only cookie**
+4. **Pod** calls **PesaFlow API** with `Authorization: Bearer <token>`
+5. **Response** flows back to user
+
+> The cookie is stored in the user's browser but is **only accessible by the server** (HTTP-only flag). JavaScript cannot read it.
 
 ## 2. Application Containerization & Delivery
 
 **Question:** Confirm if the application will be delivered as a Docker container and provide Kubernetes manifests.
 
 **Response:**
-**Yes**, the Next.js application will be delivered as a production-ready **Docker Container**.
+**Yes**, the Next.js application can be delivered as a **Docker Container**.
 
 - **Delivery Format:** Docker Image (Linux/Node.js)
 - **Container Registry:** (To be determined / Provided by KRA Registry)
@@ -35,7 +66,6 @@ The architecture diagram has been updated (see below) to reflect that the "eCiti
     - `service.yaml` (Internal networking)
     - `ingress.yaml` (External access configuration)
 
-*Please refer to the attached `k8s/` directory for the specific manifest files.*
 
 ## 3. KRA Identity Service Clarification
 

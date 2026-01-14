@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 
-const BASE_URL = 'https://kratest.pesaflow.com/api/ussd';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const USER_MSISDN = '254745050238';
 const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',

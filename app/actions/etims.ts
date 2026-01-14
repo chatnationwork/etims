@@ -16,7 +16,7 @@ import {
   SubmitBuyerInitiatedInvoiceResult
 } from '../etims/_lib/definitions';
 
-const BASE_URL = 'https://kratest.pesaflow.com/api/ussd';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const getAuthHeaders = async () => {
   const cookieStore = await cookies();

@@ -17,14 +17,13 @@ spec:
     spec:
       containers:
         - name: etims-app
-          image: etims-app:latest # Replace with actual registry path
+          image: etims-app:latest 
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
             - name: NODE_ENV
               value: "production"
-            # Secrets should be mounted via Secret resource in production
             - name: WHATSAPP_PHONE_NUMBER_ID
               valueFrom:
                 secretKeyRef:
@@ -40,6 +39,11 @@ spec:
                 configMapKeyRef:
                   name: etims-config
                   key: NEXT_PUBLIC_WHATSAPP_NUMBER
+            - name: NEXT_PUBLIC_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: etims-config
+                  key: NEXT_PUBLIC_API_BASE_URL
           resources:
             requests:
               cpu: "250m"
