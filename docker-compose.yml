@@ -1,0 +1,22 @@
+services:
+  etims-app:
+    container_name: etims-app
+    image: etims-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - .env.production
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

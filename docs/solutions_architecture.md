@@ -8,7 +8,36 @@ This addresses KRA's requirement for a clear distinction between the **Public-Fa
 
 The following diagram illustrates the "Interconnection" between the external user, the public subdomain, and the private KRA API layer.
 
-![alt text](<WhatsApp Image 2026-01-09 at 14.09.38.jpeg>)
+graph TD
+    subgraph "External (Public Internet)"
+        User[("Taxpayer Phone<br/>(WhatsApp WebView)")]
+    end
+
+    subgraph "KRA Infrastructure (VPC)"
+        subgraph "DMZ / Public Edge"
+            LB["KRA Load Balancer<br/>(whatsapp.kra.go.ke)"]
+            App["Next.js Application Server<br/>"]
+        end
+
+        subgraph "Private / Core Network"
+            AuthS["PesaFlow Identity Service<br/>(MSISDN Validator)"]
+            CoreAPI["PesaFlow API<br/>(Upstream Services)"]
+        end
+    end
+
+    %% Step-by-Step Flow
+    User -- "1. HTTPS Access (?phone=...)" --> LB
+    LB -- "2. Route to Container" --> App
+    
+    subgraph "Server-Side Interconnection"
+        App -- "3. Validate MSISDN" --> AuthS
+        AuthS -- "4. Return Session Token" --> App
+        App -- "5. Set Secure HTTP-Only Cookie" --> User
+        App -- "6. Proxy Request with Token" --> CoreAPI
+    end
+
+    CoreAPI -- "7. Response Data" --> App
+    App -- "8. Rendered View" --> User
 
 ---
 
