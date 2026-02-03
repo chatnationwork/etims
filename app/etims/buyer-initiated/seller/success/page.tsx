@@ -5,7 +5,6 @@ import { Suspense, useEffect } from 'react';
 import { Layout, Card, Button } from '../../../_components/Layout';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { QuickMenu, WhatsAppButton } from '@/app/etims/_components/QuickMenu';
-import { trackFlowCompleted } from '@/app/_components/PostHogProvider';
 
 function BuyerSuccessContent() {
   const router = useRouter();
@@ -15,10 +14,6 @@ function BuyerSuccessContent() {
   const buyerName = searchParams.get('buyer');
   const isAccepted = action === 'accepted' || action === 'approve';
   
-  // Track flow completion on mount
-  useEffect(() => {
-    trackFlowCompleted('buyer_initiated_seller');
-  }, []);
 
   const handleGoHome = () => {
     router.push('/etims/buyer-initiated');

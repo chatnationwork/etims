@@ -6,7 +6,7 @@ import { Layout, Card, Button } from '../../../_components/Layout';
 import { clearBuyerInitiated } from '../../../_lib/store';
 import { CheckCircle } from 'lucide-react';
 import { QuickMenu, WhatsAppButton } from '@/app/etims/_components/QuickMenu';
-import { trackFlowCompleted } from '@/app/_components/PostHogProvider';
+
 
 function BuyerInitiatedSuccessContent() {
   const router = useRouter();
@@ -14,11 +14,7 @@ function BuyerInitiatedSuccessContent() {
   const invoiceNo = searchParams.get('invoice') || '';
 
   const sellerName = searchParams.get('seller') || '';
-  
-  // Track flow completion on mount
-  useEffect(() => {
-    trackFlowCompleted('buyer_initiated_buyer');
-  }, []);
+
   
   const handleCreateAnother = () => {
     clearBuyerInitiated();

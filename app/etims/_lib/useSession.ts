@@ -26,7 +26,7 @@ export function useSessionManager() {
       
       // Redirect with phone number preserved if available
       if (msisdn) {
-        router.push(`/etims/auth?number=${encodeURIComponent(msisdn)}`);
+        router.push(`/etims/auth?phone=${encodeURIComponent(msisdn)}`);
       } else {
         router.push('/etims/auth');
       }

@@ -11,7 +11,7 @@ import { Loader2, ArrowLeft, Smartphone } from 'lucide-react';
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const phoneNumber = searchParams.get('number') || '';
+  const phoneNumber = searchParams.get('phone') || '';
   
   const [step, setStep] = useState(1); // 1: ID input, 2: Preview/Terms, 3: OTP verification
   const [idNumber, setIdNumber] = useState('');
@@ -140,7 +140,7 @@ function SignupContent() {
           // disable continue button
           
           setTimeout(() => {
-            router.push('/etims/auth?number=' + phoneNumber);
+            router.push('/etims/auth?phone=' + phoneNumber);
           }, 2000);
         }
       }

@@ -12,7 +12,7 @@ const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const phoneNumber = searchParams.get('number') || '';
+  const phoneNumber = searchParams.get('phone') || '';
   const userName = searchParams.get('name') || '';
   const userPin = searchParams.get('pin') || '';
   

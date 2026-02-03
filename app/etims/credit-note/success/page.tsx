@@ -6,17 +6,13 @@ import { Layout, Card, Button } from '../../_components/Layout';
 import { QuickMenu, WhatsAppButton } from '../../_components/QuickMenu';
 import { CheckCircle } from 'lucide-react';
 import { clearCreditNote } from '../../_lib/store';
-import { trackFlowCompleted } from '@/app/_components/PostHogProvider';
+
 
 function CreditNoteSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const creditNoteNo = searchParams.get('creditNote') || '';
   
-  // Track flow completion on mount
-  useEffect(() => {
-    trackFlowCompleted('credit_note');
-  }, []);
 
   const handleCreateAnother = () => {
     clearCreditNote();

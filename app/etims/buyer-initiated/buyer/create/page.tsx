@@ -7,18 +7,10 @@ import { saveBuyerInitiated } from '../../../_lib/store';
 import { CheckCircle, Building2, User, Loader2, ArrowLeft } from 'lucide-react';
 import { lookupCustomer } from '../../../../actions/etims';
 import { PINOrIDInput } from '../../../../_components/KRAInputs';
-import { useFlowTracking, trackFlowStarted } from '@/app/_components/PostHogProvider';
 
 export default function BuyerInitiatedCreate() {
   const router = useRouter();
-  
-  // Track this step
-  useFlowTracking('buyer_initiated_buyer', 'create', 1);
-  
-  // Track flow start on first mount
-  useEffect(() => {
-    trackFlowStarted('buyer_initiated_buyer');
-  }, []);
+
   const [transactionType, setTransactionType] = useState<'b2b' | 'b2c'>('b2b');
   const [sellerPinOrId, setSellerPinOrId] = useState('');
   const [sellerInfo, setSellerInfo] = useState<{ pin: string; name: string } | null>(null);

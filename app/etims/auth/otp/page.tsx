@@ -10,7 +10,7 @@ import { Loader2, MessageSquare, CheckCircle } from 'lucide-react';
 function OTPContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const phoneNumber = searchParams.get('number') || '';
+  const phoneNumber = searchParams.get('phone') || '';
   const idNumber = searchParams.get('id') || '';
   const name = searchParams.get('name') || '';
   
@@ -73,7 +73,7 @@ function OTPContent() {
         console.log('Sending WhatsApp registration confirmation to:', phoneNumber);
         
         setTimeout(() => {
-          router.push(`/etims?number=${encodeURIComponent(phoneNumber)}`);
+          router.push(`/etims?phone=${encodeURIComponent(phoneNumber)}`);
         }, 2000);
       } else {
         setError(regResult.error || 'Registration failed');

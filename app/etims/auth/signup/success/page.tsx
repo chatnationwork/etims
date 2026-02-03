@@ -48,7 +48,7 @@ function SignupSuccessContent() {
 
   const handleLogin = () => {
     const params = new URLSearchParams();
-    if (phone) params.set('number', phone);
+    if (phone) params.set('phone', phone);
     if (name) params.set('name', name);
     if (pin) params.set('pin', pin);
     

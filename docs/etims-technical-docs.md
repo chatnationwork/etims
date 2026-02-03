@@ -4,7 +4,7 @@
 The eTIMS module is a **Next.js 14 App Router** application designed to function as a **WhatsApp Web View**. This context drives many architectural decisions, particularly around session handling and entry points.
 
 *   **Deep Linking**: Users rarely land on "Home" first. They usually enter via a parameterized URL.
-    *   *Login*: `app/etims/auth/login/page.tsx` reads `searchParams` (`?number=...`) to pre-fill the form.
+    *   *Login*: `app/etims/auth/login/page.tsx` reads `searchParams` (`?phone=...`) to pre-fill the form.
     *   *Buyer Actions*: `app/etims/buyer-initiated/buyer/create/page.tsx` may receive `?sku=...` or other context.
 
 *   **Server Actions**: All business logic (API calls to KRA) resides in `app/actions/etims.ts`. This ensures:
