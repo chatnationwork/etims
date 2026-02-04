@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout, Card, Button } from '../_components/Layout';
 import { checkUserStatus } from '../../actions/etims';
-import { saveUserSession } from '../_lib/store';
+import { saveKnownPhone, saveUserSession } from '../_lib/store';
 import { Loader2, Phone } from 'lucide-react';
 
 const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
@@ -16,6 +16,13 @@ function AuthContent() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+    // Persist phone number from URL to localStorage for other pages to access
+    useEffect(() => {
+      if (phoneNumber) {
+        saveKnownPhone(phoneNumber);
+      }
+    }, [phoneNumber]);
 
   const handleCheckStatus = async (msisdn: string) => {
     setLoading(true);

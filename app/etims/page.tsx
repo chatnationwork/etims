@@ -1,12 +1,22 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, FileMinus, UserCheck, HelpCircle } from 'lucide-react';
 import { Layout, Card } from './_components/Layout';
-import { clearSalesInvoice, clearCreditNote, clearBuyerInitiated } from './_lib/store';
+import { clearSalesInvoice, clearCreditNote, clearBuyerInitiated, saveKnownPhone } from './_lib/store';
 
-export default function EtimsHome() {
+function EtimsHomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const phoneNumber = searchParams.get('phone');
+
+  // Persist phone number from URL to localStorage BEFORE session check runs
+  useEffect(() => {
+    if (phoneNumber) {
+      saveKnownPhone(phoneNumber);
+    }
+  }, [phoneNumber]);
 
   const actionCards = [
     {
@@ -111,5 +121,13 @@ export default function EtimsHome() {
         </div>
       </div>
     </Layout>
+  );
+}
+
+export default function EtimsHome() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm">Loading...</div>}>
+      <EtimsHomeContent />
+    </Suspense>
   );
 }

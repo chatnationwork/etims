@@ -63,6 +63,20 @@ const getApiErrorMessage = (error: any, context: string = 'API'): string => {
 };
 
 /**
+ * Generates a proxy URL for authenticated PDF links.
+ * This allows WhatsApp to access protected documents by routing through our proxy.
+ */
+const getProxyUrl = (targetUrl: string, token: string | undefined): string => {
+  if (!token || !targetUrl) return targetUrl;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!baseUrl) {
+    console.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
+    return targetUrl;
+  }
+  return `${baseUrl}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
+};
+
+/**
  * Lookup customer by PIN or ID
  */
 export async function lookupCustomer(pinOrId: string): Promise<CustomerLookupResult> {
@@ -1180,7 +1194,13 @@ export interface SendWhatsAppDocumentResult {
 export async function sendWhatsAppDocument(
   params: SendWhatsAppDocumentParams
 ): Promise<SendWhatsAppDocumentResult> {
-  const { recipientPhone, documentUrl, caption, filename } = params;
+  const { recipientPhone, caption, filename } = params;
+  let { documentUrl } = params;
+
+  // Proxy the document URL for authenticated access
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('etims_auth_token')?.value;
+  documentUrl = getProxyUrl(documentUrl, authToken);
 
   // Validate required params
   if (!recipientPhone || !documentUrl) {
@@ -1315,6 +1335,11 @@ export async function sendBuyerStatusUpdateWithPdf(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
+  // Proxy the PDF URL for authenticated access
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('etims_auth_token')?.value;
+  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
@@ -1345,7 +1370,7 @@ export async function sendBuyerStatusUpdateWithPdf(
             {
               type: "document",
               document: {
-                link: pdfUrl,
+                link: proxiedPdfUrl,
                 filename: "invoice.pdf" // Optional but good practice
               }
             }
@@ -1469,6 +1494,11 @@ export async function sendInvoiceCreditDocTemplate(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
+  // Proxy the PDF URL for authenticated access
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('etims_auth_token')?.value;
+  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
@@ -1499,7 +1529,7 @@ export async function sendInvoiceCreditDocTemplate(
             {
               type: "document",
               document: {
-                link: pdfUrl,
+                link: proxiedPdfUrl,
                 filename: "document.pdf" 
               }
             }
@@ -1540,6 +1570,11 @@ export async function sendDownloadInvoicesTemplate(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
+  // Proxy the PDF URL for authenticated access
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('etims_auth_token')?.value;
+  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
@@ -1570,7 +1605,7 @@ export async function sendDownloadInvoicesTemplate(
             {
               type: "document",
               document: {
-                link: pdfUrl,
+                link: proxiedPdfUrl,
                 filename: "document.pdf" 
               }
             }
