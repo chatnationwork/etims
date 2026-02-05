@@ -893,7 +893,7 @@ export async function lookupById(idNumber: string, phoneNumber: string, yearOfBi
 
   try {
     const response = await axios.post(
-      'https://kratest.pesaflow.com/api/ussd/id-lookup',
+      `${BASE_URL}/id-lookup`,
       { 
         id_number: idNumber.trim(),
         msisdn: cleanNumber
