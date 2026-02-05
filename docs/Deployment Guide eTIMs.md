@@ -240,6 +240,7 @@ Create a `.env.production` file with these values. An example template is provid
 | `WHATSAPP_ACCESS_TOKEN` | System User Token with messaging permissions. | `EAA...` |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | The display number (no `+` sign). | `254708427694` |
 | `NEXT_PUBLIC_API_BASE_URL` | Base URL for the upstream API. | `https://ecitizen.kra.go.ke/api/ussd` |
+| `NEXT_PUBLIC_APP_URL` | The URL of the application. | `https://ecitizen-test.kra.go.ke` |
 
 ```bash
 # Copy the template to create your production config
