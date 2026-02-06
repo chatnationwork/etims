@@ -17,6 +17,9 @@ import {
 } from '../etims/_lib/definitions';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const ETIMS_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+console.log('BASE_URL:', BASE_URL);
+console.log('ETIMS_APP_URL:', ETIMS_APP_URL);
 
 const getAuthHeaders = async () => {
   const cookieStore = await cookies();
@@ -68,13 +71,11 @@ const getApiErrorMessage = (error: any, context: string = 'API'): string => {
  */
 const getProxyUrl = (targetUrl: string, token: string | undefined): string => {
   if (!token || !targetUrl) return targetUrl;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!baseUrl) {
+  if (!ETIMS_APP_URL) {
     console.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
     return targetUrl;
   }
-  console.log('Proxy URL:', `${baseUrl}`);
-  return `https://ecitizen-test.kra.go.ke/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
+  return `${ETIMS_APP_URL}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
 };
 
 /**
