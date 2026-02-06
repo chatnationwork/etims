@@ -197,7 +197,7 @@ export async function submitInvoice(
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 60000, 
       }
@@ -266,7 +266,7 @@ export async function fetchInvoices(
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -382,7 +382,7 @@ export async function searchCreditNoteInvoice(
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -551,7 +551,7 @@ export async function submitCreditNote(
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -617,7 +617,7 @@ export async function processBuyerInvoice(
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -782,6 +782,15 @@ export async function submitBuyerInitiatedInvoice(
   console.log('BASE_URL:', BASE_URL);
 
   try {
+    const authHeaders = await getAuthHeaders();
+    const requestHeaders = {
+       ...authHeaders,
+       'x-source-for': 'whatsapp',
+       'x-forwarded-for':'whatsapp'
+    };
+
+    console.log('Request Headers:', JSON.stringify(requestHeaders, null, 2));
+
     const response = await axios.post(
       `${BASE_URL}/buyer-initiated/submit/invoice`,
       {
@@ -794,16 +803,14 @@ export async function submitBuyerInitiatedInvoice(
         source: 'whatsapp'
       },
       {
-        headers: {
-          ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
-        },
+        headers: requestHeaders,
         timeout: 30000
       }
     );
 
-    console.log('Submit buyer initiated invoice response:', JSON.stringify(response.data, null, 2));
+    console.log('Submit buyer initiated invoice response status:', response.status);
+    console.log('Submit buyer initiated invoice response headers:', JSON.stringify(response.headers, null, 2));
+    console.log('Submit buyer initiated invoice response data:', JSON.stringify(response.data, null, 2));
 
     return {
       success: response.data.success !== false, // Some APIs return success: true/false, others implict success
@@ -986,7 +993,7 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
         headers: {
           ...(await getAuthHeaders()),
           'x-source-for': 'whatsapp',
-          'x-fowarded-for':'whatsapp'
+          'x-forwarded-for':'whatsapp'
         },
         timeout: 30000
       }
