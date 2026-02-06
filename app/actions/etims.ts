@@ -73,7 +73,8 @@ const getProxyUrl = (targetUrl: string, token: string | undefined): string => {
     console.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
     return targetUrl;
   }
-  return `${baseUrl}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
+  console.log('Proxy URL:', `${baseUrl}`);
+  return `https://ecitizen-test.kra.go.ke/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
 };
 
 /**
