@@ -75,6 +75,9 @@ const getProxyUrl = (targetUrl: string, token: string | undefined): string => {
     console.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
     return targetUrl;
   }
+
+  console.log('BASE_URL:', BASE_URL);
+  console.log('ETIMS_APP_URL:', ETIMS_APP_URL);
   return `${ETIMS_APP_URL}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
 };
 
