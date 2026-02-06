@@ -1228,10 +1228,10 @@ export async function sendWhatsAppDocument(
   const { recipientPhone, caption, filename } = params;
   let { documentUrl } = params;
 
-  // Proxy the document URL for authenticated access
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('etims_auth_token')?.value;
-  documentUrl = getProxyUrl(documentUrl, authToken);
+  // Proxy removed - links are public know
+  // const cookieStore = await cookies();
+  // const authToken = cookieStore.get('etims_auth_token')?.value;
+  // documentUrl = getProxyUrl(documentUrl, authToken);
 
   // Validate required params
   if (!recipientPhone || !documentUrl) {
@@ -1366,10 +1366,11 @@ export async function sendBuyerStatusUpdateWithPdf(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
-  // Proxy the PDF URL for authenticated access
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('etims_auth_token')?.value;
-  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  // Proxy removed - links are public know
+  // const cookieStore = await cookies();
+  // const authToken = cookieStore.get('etims_auth_token')?.value;
+  // const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  const proxiedPdfUrl = pdfUrl;
 
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
@@ -1525,10 +1526,11 @@ export async function sendInvoiceCreditDocTemplate(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
-  // Proxy the PDF URL for authenticated access
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('etims_auth_token')?.value;
-  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  // Proxy removed - links are public know
+  // const cookieStore = await cookies();
+  // const authToken = cookieStore.get('etims_auth_token')?.value;
+  // const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  const proxiedPdfUrl = pdfUrl;
 
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
@@ -1601,10 +1603,11 @@ export async function sendDownloadInvoicesTemplate(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
-  // Proxy the PDF URL for authenticated access
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('etims_auth_token')?.value;
-  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  // Proxy removed - links are public know
+  // const cookieStore = await cookies();
+  // const authToken = cookieStore.get('etims_auth_token')?.value;
+  // const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  const proxiedPdfUrl = pdfUrl;
 
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
