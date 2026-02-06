@@ -95,6 +95,7 @@ export async function lookupCustomer(pinOrId: string): Promise<CustomerLookupRes
   }
 
   console.log('Looking up customer:', pinOrId);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -186,6 +187,7 @@ export async function submitInvoice(
   request.source = 'whatsapp';
 
   console.log('Submitting invoice:', JSON.stringify(request, null, 2));
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -194,7 +196,8 @@ export async function submitInvoice(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 60000, 
       }
@@ -245,6 +248,7 @@ export async function fetchInvoices(
   }
 
   console.log('Fetching invoices for:', cleanNumber, 'status:', status || 'all', 'actor:', actor || 'all');
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const params = new URLSearchParams();
@@ -261,7 +265,8 @@ export async function fetchInvoices(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -364,6 +369,7 @@ export async function searchCreditNoteInvoice(
   }
 
   console.log('Searching credit note invoice:', invoiceNo, 'for:', cleanNumber);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -375,7 +381,8 @@ export async function searchCreditNoteInvoice(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -496,6 +503,7 @@ export async function submitCreditNote(
     ...request,
     msisdn: cleanNumber
   }, null, 2));
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     
@@ -542,7 +550,8 @@ export async function submitCreditNote(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -594,6 +603,7 @@ export async function processBuyerInvoice(
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log(`Processing invoice ${invoiceRef} for ${cleanNumber}: ${action}`);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -606,7 +616,8 @@ export async function processBuyerInvoice(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -768,6 +779,7 @@ export async function submitBuyerInitiatedInvoice(
   else if (cleanSellerNumber && !cleanSellerNumber.startsWith('254')) cleanSellerNumber = '254' + cleanSellerNumber;
 
   console.log('Submitting buyer initiated invoice:', JSON.stringify({ ...request, msisdn: cleanNumber }, null, 2));
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -784,7 +796,8 @@ export async function submitBuyerInitiatedInvoice(
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -828,6 +841,7 @@ export async function checkUserStatus(msisdn: string): Promise<CheckUserStatusRe
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log('Checking user status for:', cleanNumber);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -895,6 +909,7 @@ export async function lookupById(idNumber: string, phoneNumber: string, yearOfBi
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log('Looking up ID:', idNumber, 'Phone:', cleanNumber, 'YOB to verify:', yearOfBirth);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -961,6 +976,7 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log('Registering taxpayer:', { idNumber, msisdn: cleanNumber });
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -969,7 +985,8 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
       {
         headers: {
           ...(await getAuthHeaders()),
-          'x-source-for': 'whatsapp'
+          'x-source-for': 'whatsapp',
+          'x-fowarded-for':'whatsapp'
         },
         timeout: 30000
       }
@@ -1012,6 +1029,7 @@ export async function generateOTP(msisdn: string): Promise<GenerateOTPResult> {
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log('Generating OTP for:', cleanNumber);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
@@ -1056,6 +1074,7 @@ export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPR
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
   console.log('Verifying OTP for:', cleanNumber);
+  console.log('BASE_URL:', BASE_URL);
 
   try {
     const response = await axios.post(
