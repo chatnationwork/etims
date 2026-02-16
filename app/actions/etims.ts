@@ -15,11 +15,12 @@ import {
   SubmitBuyerInitiatedInvoiceRequest,
   SubmitBuyerInitiatedInvoiceResult
 } from '../etims/_lib/definitions';
+import logger from '@/lib/logger';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const ETIMS_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
-console.log('BASE_URL:', BASE_URL);
-console.log('ETIMS_APP_URL:', ETIMS_APP_URL);
+logger.info(`BASE_URL: ${BASE_URL}`);
+
 
 const getAuthHeaders = async () => {
   const cookieStore = await cookies();
@@ -34,7 +35,7 @@ const getAuthHeaders = async () => {
  * Logs detailed error on server, returns friendly message string
  */
 const getApiErrorMessage = (error: any, context: string = 'API'): string => {
-  console.error(`[${context}] API Error:`, {
+  logger.error(`[${context}] API Error:`, {
     status: error.response?.status,
     data: error.response?.data,
     message: error.message,
@@ -72,12 +73,11 @@ const getApiErrorMessage = (error: any, context: string = 'API'): string => {
 const getProxyUrl = (targetUrl: string, token: string | undefined): string => {
   if (!token || !targetUrl) return targetUrl;
   if (!ETIMS_APP_URL) {
-    console.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
+    logger.warn('NEXT_PUBLIC_APP_URL not set, PDF proxy may not work for WhatsApp');
     return targetUrl;
   }
 
-  console.log('BASE_URL:', BASE_URL);
-  console.log('ETIMS_APP_URL:', ETIMS_APP_URL);
+  logger.debug(`URL: ${ETIMS_APP_URL}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`);
   return `${ETIMS_APP_URL}/api/proxy/pdf?url=${encodeURIComponent(targetUrl)}&token=${token}`;
 };
 
@@ -94,8 +94,8 @@ export async function lookupCustomer(pinOrId: string): Promise<CustomerLookupRes
     return { success: false, error: 'Please enter a valid PIN or ID number' };
   }
 
-  console.log('Looking up customer:', pinOrId);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Looking up customer: ${pinOrId}`);
+  logger.debug(`URL: ${BASE_URL}/buyer-initiated/lookup`);
 
   try {
     const response = await axios.post(
@@ -109,7 +109,7 @@ export async function lookupCustomer(pinOrId: string): Promise<CustomerLookupRes
       }
     );
 
-    console.log('Lookup response:', JSON.stringify(response.data, null, 2));
+    logger.info('Lookup response:', { data: response.data });
 
     // The API returns { code: 3, message: "Valid ID Number", name: "...", pin: "..." } on success
     // It does not return a standard success: boolean flag.
@@ -129,7 +129,7 @@ export async function lookupCustomer(pinOrId: string): Promise<CustomerLookupRes
         };
     }
   } catch (error: any) {
-    console.error('[Customer Lookup] Error:', {
+    logger.error('[Customer Lookup] Error:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
@@ -186,8 +186,8 @@ export async function submitInvoice(
 
   request.source = 'whatsapp';
 
-  console.log('Submitting invoice:', JSON.stringify(request, null, 2));
-  console.log('BASE_URL:', BASE_URL);
+  logger.info('Submitting invoice:', { request });
+  logger.debug(`URL: ${BASE_URL}/post-sale`);
 
   try {
     const response = await axios.post(
@@ -203,7 +203,7 @@ export async function submitInvoice(
       }
     );
 
-    console.log('Invoice API Response:', JSON.stringify(response.data, null, 2));
+    logger.info('Invoice API Response:', { data: response.data });
 
     // API returns code 8 for success
     // Transform to InvoiceSubmissionResult interface
@@ -247,8 +247,8 @@ export async function fetchInvoices(
     cleanNumber = '254' + cleanNumber;
   }
 
-  console.log('Fetching invoices for:', cleanNumber, 'status:', status || 'all', 'actor:', actor || 'all');
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Fetching invoices for: ${cleanNumber}, status: ${status || 'all'}, actor: ${actor || 'all'}`);
+  logger.debug(`URL: ${BASE_URL}/buyer-initiated/fetch/${cleanNumber}`);
 
   try {
     const params = new URLSearchParams();
@@ -272,7 +272,7 @@ export async function fetchInvoices(
       }
     );
 
-    console.log('Fetch invoices response:', JSON.stringify(response.data, null, 2));
+    logger.info('Fetch invoices response:', { data: response.data });
 
     // Handle different response formats
     let invoices: any[] = [];
@@ -333,7 +333,7 @@ export async function fetchInvoices(
       invoices: parsedInvoices
     };
   } catch (error: any) {
-    console.error('Fetch invoices error:', error.response?.data || error.message);
+    logger.error('Fetch invoices error:', error.response?.data || error.message);
     if (error.response?.status === 404) {
       return {
         success: true,
@@ -368,8 +368,8 @@ export async function searchCreditNoteInvoice(
     cleanNumber = '254' + cleanNumber;
   }
 
-  console.log('Searching credit note invoice:', invoiceNo, 'for:', cleanNumber);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Searching credit note invoice: ${invoiceNo} for: ${cleanNumber}`);
+  logger.debug(`URL: ${BASE_URL}/search/credit-note`);
 
   try {
     const response = await axios.post(
@@ -388,7 +388,7 @@ export async function searchCreditNoteInvoice(
       }
     );
 
-    console.log('Search credit note response:', JSON.stringify(response.data, null, 2));
+    logger.info('Search credit note response:', { data: response.data });
 
     // Handle response - check if invoice data is in the response
     if (response.data.success === false) {
@@ -415,7 +415,7 @@ export async function searchCreditNoteInvoice(
       hasPartialCreditNote: response.data.has_partial_credit_note || false
     };
   } catch (error: any) {
-    console.error('Search credit note error:', error.response?.data || error.message);
+    logger.error('Search credit note error:', error.response?.data || error.message);
     
     // Handle specific error codes from API
     const errorCode = error.response?.data?.code;
@@ -499,11 +499,8 @@ export async function submitCreditNote(
     cleanNumber = '254' + cleanNumber;
   }
 
-  console.log('Submitting credit note:', JSON.stringify({
-    ...request,
-    msisdn: cleanNumber
-  }, null, 2));
-  console.log('BASE_URL:', BASE_URL);
+  logger.info('Submitting credit note:', { ...request, msisdn: cleanNumber });
+  logger.debug(`URL: ${BASE_URL}/submit/credit-note`);
 
   try {
     
@@ -541,8 +538,8 @@ export async function submitCreditNote(
       payload.source = 'whatsapp';
     }
 
-    console.log(`Submitting ${request.credit_note_type} credit note to:`, endpoint);
-    console.log('Payload:', JSON.stringify(payload, null, 2));
+    logger.info(`Submitting ${request.credit_note_type} credit note to: ${endpoint}`);
+    logger.debug('Payload:', { payload });
 
     const response = await axios.post(
       endpoint,
@@ -557,7 +554,7 @@ export async function submitCreditNote(
       }
     );
 
-    console.log('Submit credit note response:', JSON.stringify(response.data, null, 2));
+    logger.info('Submit credit note response:', { data: response.data });
 
     // API returns code 12 for success
     return {
@@ -569,11 +566,11 @@ export async function submitCreditNote(
       error: response.data.code !== 12 ? response.data.message : undefined
     };
   } catch (error: any) {
-    console.error('Submit credit note error:', error.response?.data || error.message);
+    logger.error('Submit credit note error:', error.response?.data || error.message);
     
     // If API doesn't support full payload yet, return mock success
     if (error.response?.status === 400 || error.response?.status === 422) {
-      console.log('API may not support full payload, returning mock success');
+      logger.debug('API may not support full payload');
       return {
         success: false,
    
@@ -602,8 +599,8 @@ export async function processBuyerInvoice(
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log(`Processing invoice ${invoiceRef} for ${cleanNumber}: ${action}`);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Processing invoice ${invoiceRef} for ${cleanNumber}: ${action}`);
+  logger.debug(`URL: ${BASE_URL}/buyer-initiated/action/submit`);
 
   try {
     const response = await axios.post(
@@ -623,7 +620,7 @@ export async function processBuyerInvoice(
       }
     );
 
-    console.log('Process invoice response:', JSON.stringify(response.data, null, 2));
+    logger.info('Process invoice response:', { data: response.data });
 
     // If accepted, poll for the approved invoice to get the PDF URL
     if (action === 'accept' && (response.data.success !== false)) {
@@ -631,17 +628,17 @@ export async function processBuyerInvoice(
 
       (async () => {
         try {
-          console.log(`Starting polling for approved invoice ${invoiceRef} PDF...`);
+          logger.info(`Starting polling for approved invoice ${invoiceRef} PDF...`);
           // Try 3 times with delay
           for (let i = 0; i < 3; i++) {
             const delay = (i + 1) * 2000; // 2s, 4s, 6s - wait, user said 1 or 3 seconds. Let's do 2s delay.
-            console.log(`Polling attempt ${i + 1}/3... waiting 2s`);
+            logger.debug(`Polling attempt ${i + 1}/3... waiting 2s`);
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const fetchResult = await fetchInvoices(cleanNumber, undefined, 'accepted', 'supplier');
             
             if (fetchResult.success && fetchResult.invoices) {
-              console.log(`Fetched ${fetchResult.invoices.length} accepted invoices.`);
+              logger.debug(`Fetched ${fetchResult.invoices.length} accepted invoices.`);
             
               const approvedInvoice = fetchResult.invoices.find(inv => 
                 (inv.invoice_number === invoiceRef) || 
@@ -651,10 +648,10 @@ export async function processBuyerInvoice(
               );
 
               if (approvedInvoice) {
-                console.log('Approved invoice found:', JSON.stringify(approvedInvoice, null, 2));
+                logger.info('Approved invoice found:', { approvedInvoice });
                 
                 if (approvedInvoice.invoice_pdf_url) {
-                  console.log('PDF URL found, sending WhatsApp...');
+                  logger.info('PDF URL found, sending WhatsApp...', { supplier_msisdn: approvedInvoice.supplier_msisdn });
                   await sendBuyerStatusUpdateWithPdf(
                     approvedInvoice.supplier_msisdn || cleanNumber,
                     approvedInvoice.seller_name || sellerName || 'Partner',
@@ -664,7 +661,7 @@ export async function processBuyerInvoice(
                   );
 
                   if (approvedInvoice.buyer_msisdn) {
-                    console.log(`Sending PDF to buyer (${approvedInvoice.buyer_msisdn})...`);
+                    logger.info(`Sending PDF to buyer (${approvedInvoice.buyer_msisdn})...`);
                     await sendBuyerStatusUpdateWithPdf(
                       approvedInvoice.buyer_msisdn,
                       approvedInvoice.buyer_name || 'Customer',
@@ -676,17 +673,17 @@ export async function processBuyerInvoice(
                   // Found and sent
                   break; 
                 } else {
-                  console.log('Invoice found but PDF URL missing yet.');
+                  logger.warn('Invoice found but PDF URL missing yet.');
                 }
               } else {
-                console.log(`Invoice ${invoiceRef} not found in fetch results yet.`);
+                logger.warn(`Invoice ${invoiceRef} not found in fetch results yet.`);
               }
             } else {
-              console.log('Fetch invoices failed or empty:', fetchResult.error);
+              logger.error('Fetch invoices failed or empty:', { error: fetchResult.error });
             }
           }
         } catch (pollError) {
-          console.error('Error polling for invoice PDF:', pollError);
+          logger.error('Error polling for invoice PDF:', { error: pollError });
         }
       })();
     }
@@ -713,7 +710,7 @@ export async function processBuyerInvoiceBulk(
   if (!msisdn) return { success: false, processed: 0, failed: 0, errors: ['Phone number is required'] };
   if (!invoices || invoices.length === 0) return { success: false, processed: 0, failed: 0, errors: ['No invoices selected'] };
 
-  console.log(`Processing bulk invoices for ${msisdn}: ${action} (${invoices.length} items)`);
+  logger.info(`Processing bulk invoices for ${msisdn}: ${action} (${invoices.length} items)`);
 
   const results = await Promise.all(
     invoices.map(async (inv) => {
@@ -778,8 +775,8 @@ export async function submitBuyerInitiatedInvoice(
   if (cleanSellerNumber.startsWith('0')) cleanSellerNumber = '254' + cleanSellerNumber.substring(1);
   else if (cleanSellerNumber && !cleanSellerNumber.startsWith('254')) cleanSellerNumber = '254' + cleanSellerNumber;
 
-  console.log('Submitting buyer initiated invoice:', JSON.stringify({ ...request, msisdn: cleanNumber }, null, 2));
-  console.log('BASE_URL:', BASE_URL);
+  logger.info('Submitting buyer initiated invoice:', { ...request, msisdn: cleanNumber });
+  logger.debug(`URL: ${BASE_URL}/buyer-initiated/submit/invoice`);
 
   try {
     const authHeaders = await getAuthHeaders();
@@ -789,7 +786,7 @@ export async function submitBuyerInitiatedInvoice(
        'x-forwarded-for':'whatsapp'
     };
 
-    console.log('Request Headers:', JSON.stringify(requestHeaders, null, 2));
+    logger.debug('Request Headers:', { requestHeaders });
 
     const response = await axios.post(
       `${BASE_URL}/buyer-initiated/submit/invoice`,
@@ -808,9 +805,9 @@ export async function submitBuyerInitiatedInvoice(
       }
     );
 
-    console.log('Submit buyer initiated invoice response status:', response.status);
-    console.log('Submit buyer initiated invoice response headers:', JSON.stringify(response.headers, null, 2));
-    console.log('Submit buyer initiated invoice response data:', JSON.stringify(response.data, null, 2));
+    logger.info('Submit buyer initiated invoice response status:', { status: response.status });
+    logger.debug('Submit buyer initiated invoice response headers:', { headers: response.headers });
+    logger.info('Submit buyer initiated invoice response data:', { data: response.data });
 
     return {
       success: response.data.success !== false, // Some APIs return success: true/false, others implict success
@@ -847,8 +844,8 @@ export async function checkUserStatus(msisdn: string): Promise<CheckUserStatusRe
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log('Checking user status for:', cleanNumber);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Checking user status for: ${cleanNumber}`);
+  logger.debug(`URL: ${BASE_URL}/init`);
 
   try {
     const response = await axios.post(
@@ -863,7 +860,8 @@ export async function checkUserStatus(msisdn: string): Promise<CheckUserStatusRe
       }
     );
 
-    console.log('Init response:', JSON.stringify(response.data, null, 2));
+    logger.info('Init response:', { data: response.data });
+
 
     // code 1 = registered, code 0 = not registered
     const isRegistered = response.data.code === 1;
@@ -878,7 +876,7 @@ export async function checkUserStatus(msisdn: string): Promise<CheckUserStatusRe
       entities: response.data.entities,
     };
   } catch (error: any) {
-    console.error('Check user status error:', error.response?.data || error.message);
+    logger.error('Check user status error:', error.response?.data || error.message);
     return {
       success: false,
       isRegistered: false,
@@ -915,8 +913,8 @@ export async function lookupById(idNumber: string, phoneNumber: string, yearOfBi
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log('Looking up ID:', idNumber, 'Phone:', cleanNumber, 'YOB to verify:', yearOfBirth);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Looking up ID: ${idNumber}, Phone: ${cleanNumber}, YOB to verify: ${yearOfBirth}`);
+  logger.debug(`URL: ${BASE_URL}/id-lookup`);
 
   try {
     const response = await axios.post(
@@ -928,13 +926,13 @@ export async function lookupById(idNumber: string, phoneNumber: string, yearOfBi
       { 
         headers: { 
           "Content-Type": "application/json",
-         
+          
         }, 
         timeout: 30000 
       }
     );
 
-    console.log('ID lookup response:', JSON.stringify(response.data, null, 2));
+    logger.info('ID lookup response:', { data: response.data });
 
     // Check if we got a valid response with data
     if (response.data && response.data.name && response.data.yob) {
@@ -963,7 +961,7 @@ export async function lookupById(idNumber: string, phoneNumber: string, yearOfBi
       };
     }
   } catch (error: any) {
-    console.error('ID lookup error:', error.response?.data || error.message);
+    logger.error('ID lookup error:', error.response?.data || error.message);
     return { success: false, error: error.response?.data?.message || 'ID lookup failed' };
   }
 }
@@ -982,8 +980,8 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log('Registering taxpayer:', { idNumber, msisdn: cleanNumber });
-  console.log('BASE_URL:', BASE_URL);
+  logger.info('Registering taxpayer:', { idNumber, msisdn: cleanNumber });
+  logger.debug(`URL: ${BASE_URL}/register-tax-payer`);
 
   try {
     const response = await axios.post(
@@ -999,7 +997,7 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
       }
     );
 
-    console.log('Register response:', JSON.stringify(response.data, null, 2));
+    logger.info('Register response:', { data: response.data });
 
     // code 5 = registration successful
     if (response.data.code === 5) {
@@ -1016,7 +1014,7 @@ export async function registerTaxpayer(idNumber: string, msisdn: string): Promis
       return { success: false, error: response.data.message || 'Registration failed' };
     }
   } catch (error: any) {
-    console.error('Register taxpayer error:', error.response?.data || error.message);
+    logger.error('Register taxpayer error:', error.response?.data || error.message);
     return { success: false, error: error.response?.data?.message || 'Registration failed' };
   }
 }
@@ -1035,8 +1033,8 @@ export async function generateOTP(msisdn: string): Promise<GenerateOTPResult> {
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log('Generating OTP for:', cleanNumber);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Generating OTP for: ${cleanNumber}`);
+  logger.debug(`URL: ${BASE_URL}/otp`);
 
   try {
     const response = await axios.post(
@@ -1051,14 +1049,14 @@ export async function generateOTP(msisdn: string): Promise<GenerateOTPResult> {
       }
     );
 
-    console.log('Generate OTP response:', JSON.stringify(response.data, null, 2));
+    logger.info('Generate OTP response:', { data: response.data });
 
     return {
       success: true,
       message: response.data.message || 'OTP sent successfully'
     };
   } catch (error: any) {
-    console.error('Generate OTP error:', error.response?.data || error.message);
+    logger.error('Generate OTP error:', error.response?.data || error.message);
     return { 
       success: false, 
       error: error.response?.data?.message || 'Failed to send OTP' 
@@ -1080,8 +1078,8 @@ export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPR
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (!cleanNumber.startsWith('254')) cleanNumber = '254' + cleanNumber;
 
-  console.log('Verifying OTP for:', cleanNumber);
-  console.log('BASE_URL:', BASE_URL);
+  logger.info(`Verifying OTP for: ${cleanNumber}`);
+  logger.debug(`URL: ${BASE_URL}/validate-otp`);
 
   try {
     const response = await axios.post(
@@ -1090,7 +1088,7 @@ export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPR
       { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
     );
 
-    console.log('Verify OTP response:', JSON.stringify(response.data, null, 2));
+    logger.info('Verify OTP response:', { data: response.data });
 
     // Check for success (varies by API)
     if (response.data.code === 0 || response.data.success === false) {
@@ -1112,7 +1110,7 @@ export async function verifyOTP(msisdn: string, otp: string): Promise<VerifyOTPR
       message: response.data.message || 'OTP verified'
     };
   } catch (error: any) {
-    console.error('Verify OTP error:', error.response?.data || error.message);
+    logger.error('Verify OTP error:', error.response?.data || error.message);
     return { 
       success: false, 
       error: error.response?.data?.message || 'OTP verification failed' 
@@ -1160,7 +1158,7 @@ export async function sendWhatsAppMessage(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp API credentials not configured');
+    logger.error('WhatsApp API credentials not configured');
     return { success: false, error: 'WhatsApp sending not configured' };
   }
 
@@ -1177,7 +1175,7 @@ export async function sendWhatsAppMessage(
     }
   };
 
-  console.log('Sending WhatsApp message:', { to: cleanNumber, messageLength: message.length });
+  logger.info('Sending WhatsApp message:', { to: cleanNumber, messageLength: message.length });
 
   try {
     const response = await axios.post(url, payload, {
@@ -1188,14 +1186,14 @@ export async function sendWhatsAppMessage(
       timeout: 30000
     });
 
-    console.log('WhatsApp message sent successfully:', response.data);
+    logger.info('WhatsApp message sent successfully:', { data: response.data });
 
     return {
       success: true,
       messageId: response.data.messages?.[0]?.id
     };
   } catch (error: any) {
-    console.error('Error sending WhatsApp message:', error.response?.data || error.message);
+    logger.error('Error sending WhatsApp message:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.error?.message || 'Failed to send message via WhatsApp'
@@ -1250,7 +1248,7 @@ export async function sendWhatsAppDocument(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp API credentials not configured');
+    logger.error('WhatsApp API credentials not configured');
     return { success: false, error: 'WhatsApp sending not configured' };
   }
 
@@ -1268,7 +1266,7 @@ export async function sendWhatsAppDocument(
     }
   };
 
-  console.log('Sending WhatsApp document:', { to: cleanNumber, filename, documentUrl });
+  logger.info('Sending WhatsApp document:', { to: cleanNumber, filename, documentUrl });
 
   try {
     const response = await axios.post(url, payload, {
@@ -1279,14 +1277,14 @@ export async function sendWhatsAppDocument(
       timeout: 30000
     });
 
-    console.log('WhatsApp document sent successfully:', response.data);
+    logger.info('WhatsApp document sent successfully:', { data: response.data });
 
     return {
       success: true,
       messageId: response.data.messages?.[0]?.id
     };
   } catch (error: any) {
-    console.error('Error sending WhatsApp document:', error.response?.data || error.message);
+    logger.error('Error sending WhatsApp document:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.error?.message || 'Failed to send document via WhatsApp'
@@ -1315,7 +1313,7 @@ export async function sendBuyerInvoiceAlert(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1341,6 +1339,8 @@ export async function sendBuyerInvoiceAlert(
       ]
     }
   };
+
+  logger.info('Sending WhatsApp template message:', { to: cleanNumber, payload });
 
   try {
     await axios.post(url, payload, {
@@ -1377,11 +1377,13 @@ export async function sendBuyerStatusUpdateWithPdf(
   if (cleanNumber.startsWith('0')) cleanNumber = '254' + cleanNumber.substring(1);
   else if (cleanNumber.startsWith('+')) cleanNumber = cleanNumber.substring(1);
 
+  logger.info(`Sending approved invoice to ${cleanNumber}`)
+
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1421,6 +1423,7 @@ export async function sendBuyerStatusUpdateWithPdf(
   };
 
 
+
   try {
     const finalPayload = {
       ...payload,
@@ -1440,14 +1443,14 @@ export async function sendBuyerStatusUpdateWithPdf(
       }
     };
 
-    console.log('Sending WhatsApp Template:', JSON.stringify(finalPayload, null, 2));
+    logger.info('Sending WhatsApp Template:', { "buyer_alert_for_invoice_status_update": finalPayload });
     await axios.post(url, finalPayload, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       timeout: 10000
     });
     return { success: true };
   } catch (error: any) {
-    console.error('WhatsApp Template Error:', error.response?.data || error.message);
+    logger.error('WhatsApp Template Error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }
@@ -1474,7 +1477,7 @@ export async function sendBuyerInitiatedInvoiceAlert(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1504,6 +1507,8 @@ export async function sendBuyerInitiatedInvoiceAlert(
     }
   };
 
+  logger.info('Sending WhatsApp Template:', { "alert_seller_invoice_buyer_initiated": payload });
+
   try {
     await axios.post(url, payload, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1511,7 +1516,7 @@ export async function sendBuyerInitiatedInvoiceAlert(
     });
     return { success: true };
   } catch (error: any) {
-    console.error('WhatsApp template error:', error.response?.data || error.message);
+    logger.error('WhatsApp template error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }
@@ -1527,10 +1532,10 @@ export async function sendInvoiceCreditDocTemplate(
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
   // Proxy removed - links are public know
-  // const cookieStore = await cookies();
-  // const authToken = cookieStore.get('etims_auth_token')?.value;
-  // const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
-  const proxiedPdfUrl = pdfUrl;
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('etims_auth_token')?.value;
+  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  // const proxiedPdfUrl = pdfUrl;
 
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
@@ -1541,7 +1546,7 @@ export async function sendInvoiceCreditDocTemplate(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1582,14 +1587,14 @@ export async function sendInvoiceCreditDocTemplate(
   };
 
   try {
-    console.log('Sending WhatsApp Template:', JSON.stringify(payload, null, 2));
+    logger.info('Sending WhatsApp Template:', { "invoice_credit_doc": payload });
     await axios.post(url, payload, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       timeout: 10000
     });
     return { success: true };
   } catch (error: any) {
-    console.error('WhatsApp Template Error:', error.response?.data || error.message);
+    logger.error('WhatsApp Template Error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }
@@ -1618,7 +1623,7 @@ export async function sendDownloadInvoicesTemplate(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1658,14 +1663,14 @@ export async function sendDownloadInvoicesTemplate(
   };
 
   try {
-    console.log('Sending WhatsApp Template:', JSON.stringify(payload, null, 2));
+    logger.info('Sending WhatsApp Template:', { template: payload });
     await axios.post(url, payload, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       timeout: 10000
     });
     return { success: true };
   } catch (error: any) {
-    console.error('WhatsApp Template Error:', error.response?.data || error.message);
+    logger.error('WhatsApp Template Error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }
@@ -1689,7 +1694,7 @@ export async function sendDownloadInvoiceTemplate(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   
   if (!token || !phoneNumberId) {
-    console.error('WhatsApp credentials missing');
+    logger.error('WhatsApp credentials missing');
     return { success: false, error: 'Configuration error' };
   }
 
@@ -1729,14 +1734,14 @@ export async function sendDownloadInvoiceTemplate(
   };
 
   try {
-    console.log('Sending WhatsApp Template:', JSON.stringify(payload, null, 2));
+    logger.info('Sending WhatsApp Template:', { template: payload });
     await axios.post(url, payload, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       timeout: 10000
     });
     return { success: true };
   } catch (error: any) {
-    console.error('WhatsApp Template Error:', error.response?.data || error.message);
+    logger.error('WhatsApp Template Error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 }

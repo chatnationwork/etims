@@ -8,6 +8,8 @@ services:
     restart: always
     ports:
       - "${HOST_PORT:-3000}:3000"
+    environment:
+      - LOG_LEVEL=debug
     env_file:
       - .env.production
     healthcheck:
