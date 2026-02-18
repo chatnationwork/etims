@@ -1520,6 +1520,20 @@ export async function sendBuyerInitiatedInvoiceAlert(
     return { success: false, error: error.message };
   }
 }
+/**
+ * Check if a PDF URL is publicly accessible by performing a HEAD request.
+ * Returns true if the URL responds with HTTP 200, meaning no proxy is needed.
+ */
+async function isPdfUrlPublic(url: string): Promise<boolean> {
+  try {
+    const response = await axios.head(url, { timeout: 5000 });
+    return response.status === 200;
+  } catch {
+    // Any error (403, 401, timeout, network error) means it's not publicly accessible
+    return false;
+  }
+}
+
 export async function sendInvoiceCreditDocTemplate(
   recipientPhone: string,
   name: string,
@@ -1531,11 +1545,19 @@ export async function sendInvoiceCreditDocTemplate(
   
   if (!recipientPhone) return { success: false, error: 'Recipient phone required' };
 
-  // Proxy removed - links are public know
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('etims_auth_token')?.value;
-  const proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
-  // const proxiedPdfUrl = pdfUrl;
+  // Check if the PDF URL is publicly accessible; if not, route through proxy
+  const isPublic = await isPdfUrlPublic(pdfUrl);
+  let proxiedPdfUrl: string;
+
+  if (isPublic) {
+    logger.info('PDF URL is publicly accessible, skipping proxy', { pdfUrl });
+    proxiedPdfUrl = pdfUrl;
+  } else {
+    logger.info('PDF URL is not publicly accessible, using proxy', { pdfUrl });
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('etims_auth_token')?.value;
+    proxiedPdfUrl = getProxyUrl(pdfUrl, authToken);
+  }
 
   // Clean phone number
   let cleanNumber = recipientPhone.trim().replace(/[^\d]/g, '');
