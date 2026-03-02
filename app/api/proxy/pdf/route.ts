@@ -6,17 +6,15 @@ export async function GET(req: NextRequest) {
   const targetUrl = searchParams.get('url');
   const token = searchParams.get('token');
 
-  if (!targetUrl || !token) {
-    return NextResponse.json({ error: 'Missing url or token' }, { status: 400 });
+  if (!targetUrl) {
+    return NextResponse.json({ error: 'Missing url' }, { status: 400 });
   }
 
   try {
     // Fetch the PDF from the upstream server with the token
     const response = await axios.get(targetUrl, {
       responseType: 'arraybuffer',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     // Return the PDF with the correct headers
